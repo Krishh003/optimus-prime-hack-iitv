@@ -1,0 +1,101 @@
+:root {
+    --primary-light: #f8f9fa;
+    --secondary-light: #e9ecef;
+    --text-light: #212529;
+    --primary-dark: #1a1a1a;
+    --secondary-dark: #2d2d2d;
+    --text-dark: #f8f9fa;
+}
+
+body {
+    transition: all 0.3s ease;
+}
+
+.dark-mode {
+    background-color: var(--primary-dark);
+    color: var(--text-dark);
+}
+
+.dark-mode .card {
+    background-color: var(--secondary-dark);
+    border-color: #3d3d3d;
+}
+
+.navbar {
+    padding: 1rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.animate-on-scroll {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.6s ease;
+}
+
+.animate {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.theme-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.card {
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+    flex: 1;
+}
+
+.footer {
+    background-color: var(--primary-dark);
+    padding: 2rem 0;
+    margin-top: auto;
+}
+
+.footer h5 {
+    color: var(--text-dark);
+    margin-bottom: 1rem;
+}
+
+.footer a {
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.footer a:hover {
+    color: var(--primary-light);
+}
+
+.social-icons i {
+    font-size: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.social-icons i:hover {
+    transform: translateY(-3px);
+}
+
+/* Dark mode footer adjustments */
+.dark-mode .footer {
+    background-color: var(--secondary-dark);
+}
+
+.dark-mode .footer h5 {
+    color: var(--text-dark);
+}

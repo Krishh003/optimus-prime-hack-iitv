@@ -1,0 +1,45 @@
+{% extends 'listings/base.html' %}
+
+{% block content %}
+<div class="container text-center py-5">
+    <h1 class="animate-on-scroll animate__animated animate__fadeInUp">Welcome to SponsorConnect</h1>
+    <p class="lead animate-on-scroll animate__animated animate__fadeIn animate__delay-1s">
+        Bridging Sponsors and Events Worldwide
+    </p>
+
+    <div class="row mt-5">
+        <div class="col-md-4 animate-on-scroll">
+            <div class="card h-100">
+                <div class="card-body">
+                    <i class="fas fa-handshake fa-3x text-primary mb-3"></i>
+                    <h3>For Sponsors</h3>
+                    <p>Find perfect events to support your brand</p>
+                    <a href="{% url 'sponsor-list' %}" class="btn btn-primary">Browse Events</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 animate-on-scroll">
+            <div class="card h-100">
+                <div class="card-body">
+                    <i class="fas fa-calendar-alt fa-3x text-success mb-3"></i>
+                    <h3>For Organizers</h3>
+                    <p>Find sponsors for your events</p>
+                    <a href="{% url 'client-list' %}" class="btn btn-success">Find Sponsors</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 animate-on-scroll">
+            <div class="card h-100">
+                <div class="card-body">
+                    <i class="fas fa-chart-line fa-3x text-info mb-3"></i>
+                    <h3>Pricing Plans</h3>
+                    <p>Affordable options for everyone</p>
+                    <a href="{% url 'pricing' %}" class="btn btn-info">View Plans</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
