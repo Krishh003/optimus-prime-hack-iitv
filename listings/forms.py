@@ -72,3 +72,8 @@ class SponsorEventForm(forms.Form):
         required=True,
         help_text="Enter keywords separated by commas (e.g., Technology, Innovation, Networking)"
     )
+    location = forms.CharField(
+        max_length=200,
+        required=True,
+        help_text="Enter the event location"
+    )

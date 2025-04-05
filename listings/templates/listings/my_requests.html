@@ -1,6 +1,15 @@
 {% extends 'listings/base.html' %} {% load static %} {% load humanize %} {% load request_filters %} {% block content %}
-<div class="container mt-5">
-    <h2 class="mb-4">My Requests</h2>
+<div class="container py-5">
+    <h2 class="text-center mb-4">My Requests</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
 
     <!-- Created Requests -->
     <div class="card mb-4">
@@ -8,64 +17,58 @@
             <h3 class="h5 mb-0">Created Requests</h3>
         </div>
         <div class="card-body">
-            {% with active_created_requests=created_requests|filter_active_events %}
-            {% if active_created_requests %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Event Name</th>
-                            <th>Status</th>
-                            <th>Amount</th>
-                            <th>{{ user_type|title }} Name</th>
-                            <th>Created</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for request in active_created_requests %}
-                        <tr>
-                            <td>
-                                <a href="{% url 'event_details' request.event_id %}">{{ request.event_name }}</a>
-                            </td>
-                            <td>
-                                <span class="badge bg-{{ request.status_color }}">
-                                    {{ request.status|title }}
-                                </span>
-                            </td>
-                            <td>₹{{ request.price|intcomma }}</td>
-                            <td>{{ request.other_party.name }}</td>
-                            <td>{{ request.created_at|date:"M d, Y" }}</td>
-                            <td>
-                                {% if request.status == 'pending' %}
-                                    {% if request.event_creator_id == user_id %}
-                                        <button class="btn btn-sm btn-success" onclick="acceptRequest('{{ request.id }}')">
-                                            Accept
-                                        </button>
-                                        <button class="btn btn-sm btn-danger" onclick="cancelRequest('{{ request.id }}')">
-                                            Reject
-                                        </button>
-                                    {% else %}
-                                        <button class="btn btn-sm btn-danger" onclick="cancelRequest('{{ request.id }}')">
-                                            Cancel
-                                        </button>
-                                    {% endif %}
-                                {% endif %}
-                                {% if request.status == 'accepted' %}
-                                    <a href="{% url 'chat' request.id %}" class="btn btn-sm btn-primary">
-                                        Chat
-                                    </a>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+            {% if created_requests %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Event</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Amount</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for request in created_requests %}
+                                <tr>
+                                    <td>{{ request.event_name }}</td>
+                                    <td>{{ request.event_type|title }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ request.status_color }}">{{ request.status }}</span>
+                                    </td>
+                                    <td>₹{{ request.price|intcomma }}</td>
+                                    <td>{{ request.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if request.status == 'pending' %}
+                                            {% if request.event_type == 'sponsor_event' and user_type == 'sponsor' %}
+                                                <button class="btn btn-sm btn-danger" onclick="cancelRequest('{{ request.id }}')">
+                                                    Cancel
+                                                </button>
+                                            {% elif request.event_type == 'college_event' and user_type == 'college' %}
+                                                <button class="btn btn-sm btn-danger" onclick="cancelRequest('{{ request.id }}')">
+                                                    Cancel
+                                                </button>
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if request.status == 'accepted' %}
+                                            <a href="{% url 'chat' request.id %}" class="btn btn-sm btn-primary">
+                                                Chat
+                                            </a>
+                                            <button class="btn btn-sm btn-danger" onclick="deleteRequest('{{ request.id }}')">
+                                                Delete
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             {% else %}
-            <p class="text-muted">No active requests created yet.</p>
+                <p class="text-muted">No active requests created yet.</p>
             {% endif %}
-            {% endwith %}
         </div>
     </div>
 
@@ -75,58 +78,64 @@
             <h3 class="h5 mb-0">Received Requests</h3>
         </div>
         <div class="card-body">
-            {% with active_received_requests=received_requests|filter_active_events %}
-            {% if active_received_requests %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Event Name</th>
-                            <th>Status</th>
-                            <th>Amount</th>
-                            <th>{{ user_type|title }} Name</th>
-                            <th>Created</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for request in active_received_requests %}
-                        <tr>
-                            <td>
-                                <a href="{% url 'event_details' request.event_id %}">{{ request.event_name }}</a>
-                            </td>
-                            <td>
-                                <span class="badge bg-{{ request.status_color }}">
-                                    {{ request.status|title }}
-                                </span>
-                            </td>
-                            <td>₹{{ request.price|intcomma }}</td>
-                            <td>{{ request.other_party.name }}</td>
-                            <td>{{ request.created_at|date:"M d, Y" }}</td>
-                            <td>
-                                {% if request.status == 'pending' %}
-                                    <button class="btn btn-sm btn-success" onclick="acceptRequest('{{ request.id }}')">
-                                        Accept
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" onclick="cancelRequest('{{ request.id }}')">
-                                        Reject
-                                    </button>
-                                {% endif %}
-                                {% if request.status == 'accepted' %}
-                                    <a href="{% url 'chat' request.id %}" class="btn btn-sm btn-primary">
-                                        Chat
-                                    </a>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+            {% if received_requests %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Event</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Amount</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for request in received_requests %}
+                                <tr>
+                                    <td>{{ request.event_name }}</td>
+                                    <td>{{ request.event_type|title }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ request.status_color }}">{{ request.status }}</span>
+                                    </td>
+                                    <td>₹{{ request.price|intcomma }}</td>
+                                    <td>{{ request.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if request.status == 'pending' %}
+                                            {% if request.event_type == 'sponsor_event' and user_type == 'college' %}
+                                                <button class="btn btn-sm btn-success" onclick="acceptRequest('{{ request.id }}')">
+                                                    Accept
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" onclick="cancelRequest('{{ request.id }}')">
+                                                    Reject
+                                                </button>
+                                            {% elif request.event_type == 'college_event' and user_type == 'sponsor' %}
+                                                <button class="btn btn-sm btn-success" onclick="acceptRequest('{{ request.id }}')">
+                                                    Accept
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" onclick="cancelRequest('{{ request.id }}')">
+                                                    Reject
+                                                </button>
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if request.status == 'accepted' %}
+                                            <a href="{% url 'chat' request.id %}" class="btn btn-sm btn-primary">
+                                                Chat
+                                            </a>
+                                            <button class="btn btn-sm btn-danger" onclick="deleteRequest('{{ request.id }}')">
+                                                Delete
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             {% else %}
-            <p class="text-muted">No active requests received yet.</p>
+                <p class="text-muted">No active requests received yet.</p>
             {% endif %}
-            {% endwith %}
         </div>
     </div>
 </div>
@@ -176,6 +185,30 @@ function cancelRequest(requestId) {
         .catch(error => {
             console.error('Error:', error);
             alert('An error occurred while canceling the request.');
+        });
+    }
+}
+
+function deleteRequest(requestId) {
+    if (confirm('Are you sure you want to delete this request? This action cannot be undone.')) {
+        fetch(`/api/requests/${requestId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                window.location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the request.');
         });
     }
 }

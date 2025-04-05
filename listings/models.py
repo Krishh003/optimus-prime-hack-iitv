@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.hashers import make_password
 from datetime import datetime
+from django.core.exceptions import ValidationError
 
 # Common choices
 EVENT_TYPES = (
@@ -82,6 +83,7 @@ class SponsorEvent(Document):
     expected_attendance = fields.StringField(required=True)
     deliverables = fields.StringField(required=True)
     keywords = fields.StringField(required=True)
+    location = fields.StringField(required=True)
     created_at = fields.DateTimeField(default=datetime.now)
 
     meta = {'collection': 'sponsor_events'}
@@ -105,19 +107,34 @@ class CollegeEvent(Document):
         return self.event_name
 
 class EventRequest(Document):
-    sponsor = fields.ReferenceField(Sponsor)
-    college = fields.ReferenceField(College)
-    event_id = fields.StringField()
-    event_type = fields.StringField(max_length=20, choices=EVENT_TYPES)
+    sponsor = fields.ReferenceField(Sponsor, required=False)
+    college = fields.ReferenceField(College, required=False)
+    event_id = fields.StringField(required=True)
+    event_type = fields.StringField(max_length=20, choices=EVENT_TYPES, required=True)
     status = fields.StringField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    price = fields.DecimalField(precision=2)
-    basic_deliverables = fields.StringField()
-    created_at = fields.DateTimeField()
+    price = fields.DecimalField(precision=2, required=True)
+    basic_deliverables = fields.StringField(required=True)
+    created_at = fields.DateTimeField(default=datetime.now)
 
     meta = {'collection': 'event_requests'}
 
+    def clean(self):
+        # Ensure either sponsor or college is set based on event_type
+        if self.event_type == 'sponsor_event':
+            if not self.sponsor:
+                raise ValidationError('Sponsor is required for sponsor events')
+            if not self.college:
+                raise ValidationError('College is required for sponsor events')
+        else:  # college_event
+            if not self.sponsor:
+                raise ValidationError('Sponsor is required for college events')
+            if not self.college:
+                raise ValidationError('College is required for college events')
+
     def __str__(self):
-        return f"{self.sponsor.name} - {self.college.name} - {self.event_id}"
+        sponsor_name = self.sponsor.name if self.sponsor else 'Unknown Sponsor'
+        college_name = self.college.name if self.college else 'Unknown College'
+        return f"{sponsor_name} - {college_name} - {self.event_id}"
 
 class SponsorHistory(Document):
     sponsor = fields.ReferenceField(Sponsor)
