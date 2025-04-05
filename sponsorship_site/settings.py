@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'listings.apps.ListingsConfig',  # Add this line
     'rest_framework',  # Add REST framework
     'rest_framework_simplejwt',  # Add JWT

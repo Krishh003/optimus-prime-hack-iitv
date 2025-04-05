@@ -19,12 +19,23 @@
                             <i class="fas fa-phone fa-2x text-muted"></i>
                             <div class="mt-2">
                                 <span class="btn btn-sm btn-outline-success">
-                                    {{ college.phone }}
+                                    {{ college.contact_no }}
                                 </span>
                             </div>
                         </div>
                     </div>
+                    {% if college.description %}
                     <p class="card-text">{{ college.description }}</p>
+                    {% endif %} {% if college.state %}
+                    <p class="card-text">State: {{ college.state }}</p>
+                    {% endif %} {% if college.avg_rating %}
+                    <p class="card-text">Rating: {{ college.avg_rating }}/5.0</p>
+                    {% endif %}
+                    <div class="d-grid gap-2 mt-3">
+                        <a href="mailto:{{ college.email }}" class="btn btn-success">
+                            <i class="fas fa-envelope me-2"></i>Email
+                        </a>
+                    </div>
                 </div>
                 <div class="card-footer text-muted small">
                     Listed {{ college.created_at|timesince }} ago
@@ -59,6 +70,11 @@
                     </div>
                     <p class="card-text">{{ event.description }}</p>
                     <p class="card-text"><small class="text-muted">Deliverables: {{ event.basic_deliverables }}</small></p>
+                    <div class="d-grid gap-2 mt-3">
+                        <a href="mailto:{{ event.college.email }}" class="btn btn-warning">
+                            <i class="fas fa-envelope me-2"></i>Email
+                        </a>
+                    </div>
                 </div>
                 <div class="card-footer text-muted small">
                     By {{ event.college.name }} | Listed {{ event.created_at|timesince }} ago

@@ -4,25 +4,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Check localStorage for theme preference
     const savedTheme = localStorage.getItem('theme') || 'light-mode';
-    body.className = savedTheme;
-
-    // Update toggle button icon based on current theme
-    updateThemeIcon(savedTheme);
+    if (savedTheme === 'dark-mode') {
+        body.classList.add('dark-mode');
+        updateThemeIcon(true);
+    } else {
+        body.classList.remove('dark-mode');
+        updateThemeIcon(false);
+    }
 
     // Toggle theme
     themeToggle.addEventListener('click', function() {
-        const currentTheme = body.className;
-        const newTheme = currentTheme === 'light-mode' ? 'dark-mode' : 'light-mode';
-
-        body.className = newTheme;
-        localStorage.setItem('theme', newTheme);
-        updateThemeIcon(newTheme);
+        const isDarkMode = body.classList.contains('dark-mode');
+        body.classList.toggle('dark-mode');
+        localStorage.setItem('theme', isDarkMode ? 'light-mode' : 'dark-mode');
+        updateThemeIcon(!isDarkMode);
     });
 
-    function updateThemeIcon(theme) {
-        themeToggle.innerHTML = theme === 'dark-mode' ?
-            '<i class="fas fa-sun"></i>' :
-            '<i class="fas fa-moon"></i>';
+    function updateThemeIcon(isDarkMode) {
+        const icon = themeToggle.querySelector('i');
+        if (icon) {
+            icon.className = isDarkMode ? 'fas fa-sun' : 'fas fa-moon';
+        }
     }
 
     // Scroll animations

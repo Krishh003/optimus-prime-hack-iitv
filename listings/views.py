@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from .models import SponsorListing, ClientListing, Sponsor, College
+from .models import SponsorListing, ClientListing, Sponsor, College, SponsorEvent, CollegeEvent
 from .forms import SponsorForm, ClientForm, LoginForm, SignupForm
 from django.contrib import messages
 from django.views.generic import TemplateView
@@ -10,12 +10,76 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 
 def sponsor_list(request):
-    sponsors = SponsorListing.objects.filter(is_active=True)
-    return render(request, 'listings/sponsor_list.html', {'sponsors': sponsors})
+    # Get data from both old and new models
+    old_sponsors = SponsorListing.objects.filter(is_active=True)
+    new_sponsors = Sponsor.objects.all()
+    sponsor_events = SponsorEvent.objects.all()
+    
+    # Convert old sponsors to match new format
+    converted_sponsors = []
+    for sponsor in old_sponsors:
+        converted_sponsors.append({
+            'name': sponsor.name,
+            'email': sponsor.contact_email,
+            'contact_no': 'N/A',
+            'state': 'N/A',
+            'avg_rating': 0.0,
+            'created_at': sponsor.created_at,
+            'description': sponsor.description
+        })
+    
+    # Combine both lists
+    all_sponsors = list(new_sponsors) + converted_sponsors
+    
+    # Get college events for sponsorship opportunities
+    college_events = CollegeEvent.objects.all()
+    
+    # Format events for the template
+    events = []
+    for event in college_events:
+        events.append({
+            'id': event.id,
+            'college_name': event.college.name if hasattr(event, 'college') else 'Unknown College',
+            'rating': event.college.rating if hasattr(event, 'college') and hasattr(event.college, 'rating') else 4.5,
+            'amount': event.amount,
+            'deliverables': event.deliverables.split(',') if event.deliverables else ['Brand visibility', 'Social media promotion'],
+            'date': event.date,
+            'location': event.location,
+            'expected_attendance': event.expected_attendance
+        })
+    
+    return render(request, 'listings/sponsor_list.html', {
+        'sponsors': all_sponsors,
+        'sponsor_events': sponsor_events,
+        'events': events
+    })
 
 def client_list(request):
-    clients = ClientListing.objects.filter(is_active=True)
-    return render(request, 'listings/client_list.html', {'clients': clients})
+    # Get data from both old and new models
+    old_clients = ClientListing.objects.filter(is_active=True)
+    new_colleges = College.objects.all()
+    college_events = CollegeEvent.objects.all()
+    
+    # Convert old clients to match new format
+    converted_colleges = []
+    for client in old_clients:
+        converted_colleges.append({
+            'name': client.event_name,
+            'email': client.contact_email,
+            'contact_no': 'N/A',
+            'state': 'N/A',
+            'avg_rating': 0.0,
+            'created_at': client.created_at,
+            'description': client.description
+        })
+    
+    # Combine both lists
+    all_colleges = list(new_colleges) + converted_colleges
+    
+    return render(request, 'listings/client_list.html', {
+        'colleges': all_colleges,
+        'college_events': college_events
+    })
 
 def create_sponsor(request):
     if request.method == 'POST':
@@ -188,3 +252,86 @@ class PricingView(TemplateView):
 
 class HomeView(TemplateView):
     template_name = 'listings/home.html'
+
+# Sponsor dashboard views
+def add_event(request):
+    # Check if user is logged in and is a sponsor
+    if not request.session.get('user_id'):
+        messages.error(request, 'You must be logged in to add an event.')
+        return redirect('login')
+    
+    if request.method == 'POST':
+        # Handle form submission
+        # This is a placeholder - implement actual form handling
+        messages.success(request, 'Event added successfully!')
+        return redirect('sponsor-list')
+    
+    return render(request, 'listings/add_event.html')
+
+def my_requests(request):
+    # Check if user is logged in
+    if not request.session.get('user_id'):
+        messages.error(request, 'You must be logged in to view your requests.')
+        return redirect('login')
+    
+    # Get user's requests
+    # This is a placeholder - implement actual data retrieval
+    requests = []
+    
+    return render(request, 'listings/my_requests.html', {'requests': requests})
+
+def my_history(request):
+    # Check if user is logged in
+    if not request.session.get('user_id'):
+        messages.error(request, 'You must be logged in to view your history.')
+        return redirect('login')
+    
+    # Get user's history
+    # This is a placeholder - implement actual data retrieval
+    history = []
+    
+    return render(request, 'listings/my_history.html', {'history': history})
+
+def profile(request):
+    # Check if user is logged in
+    if not request.session.get('user_id'):
+        messages.error(request, 'You must be logged in to view your profile.')
+        return redirect('login')
+    
+    # Get user's profile
+    # This is a placeholder - implement actual data retrieval
+    user_id = request.session.get('user_id')
+    user = Sponsor.objects.filter(id=user_id).first()
+    
+    return render(request, 'listings/profile.html', {'user': user})
+
+def settings(request):
+    # Check if user is logged in
+    if not request.session.get('user_id'):
+        messages.error(request, 'You must be logged in to access settings.')
+        return redirect('login')
+    
+    # Get user's settings
+    # This is a placeholder - implement actual data retrieval
+    user_id = request.session.get('user_id')
+    user = Sponsor.objects.filter(id=user_id).first()
+    
+    return render(request, 'listings/settings.html', {'user': user})
+
+@csrf_exempt
+def register_interest(request, event_id):
+    # Check if user is logged in
+    if not request.session.get('user_id'):
+        return JsonResponse({'success': False, 'message': 'You must be logged in to register interest.'})
+    
+    # Get the event
+    try:
+        event = CollegeEvent.objects.get(id=event_id)
+    except CollegeEvent.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Event not found.'})
+    
+    # Register interest
+    # This is a placeholder - implement actual interest registration
+    # For example, create a new Interest model and save the interest
+    
+    return JsonResponse({'success': True, 'message': 'Interest registered successfully!'})

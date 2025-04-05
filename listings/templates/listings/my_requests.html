@@ -1,0 +1,70 @@
+{% extends 'listings/base.html' %} {% load static %} {% load humanize %} {% block content %}
+<div class="container py-5">
+    <h2 class="text-center mb-4">My Requests</h2>
+
+    {% if messages %} {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %} {% endif %}
+
+    <div class="row">
+        {% if requests %} {% for request in requests %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{{ request.event.college_name }}</h5>
+                        <span class="badge bg-{{ request.status_color }}">{{ request.status }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-primary">Event</h6>
+                        <p class="mb-0">{{ request.event.name }}</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="text-primary">Requested Amount</h6>
+                        <h4 class="mb-0">₹{{ request.amount|intcomma }}</h4>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="text-primary">Request Date</h6>
+                        <p class="mb-0">{{ request.created_at|date:"F d, Y" }}</p>
+                    </div>
+
+                    {% if request.message %}
+                    <div class="mb-3">
+                        <h6 class="text-primary">Message</h6>
+                        <p class="mb-0">{{ request.message }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-white border-top-0">
+                    <div class="d-flex justify-content-between">
+                        <a href="#" class="btn btn-outline-primary">
+                            <i class="fas fa-eye me-2"></i>View Details
+                        </a>
+                        {% if request.status == 'Pending' %}
+                        <button class="btn btn-outline-danger">
+                                        <i class="fas fa-times me-2"></i>Cancel
+                                    </button> {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %} {% else %}
+        <div class="col-12 text-center">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>You haven't made any requests yet.
+            </div>
+            <a href="{% url 'sponsor-list' %}" class="btn btn-primary mt-3">
+                <i class="fas fa-search me-2"></i>Browse Events
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

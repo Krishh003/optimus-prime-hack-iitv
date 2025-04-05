@@ -252,12 +252,7 @@ class Command(BaseCommand):
             sponsor = random.choice(sponsors)
             college = random.choice(colleges)
             event_type = random.choice(['sponsor_event', 'college_event'])
-            
-            if event_type == 'sponsor_event':
-                event_id = random.choice(sponsor_events).id
-            else:
-                event_id = random.choice(college_events).id
-                
+            event_id = random.randint(1, 5)
             amount = Decimal(random.randint(1000, 5000))
             
             history = SponsorHistory.objects.create(
@@ -267,19 +262,14 @@ class Command(BaseCommand):
                 event_type=event_type,
                 amount=amount
             )
-            self.stdout.write(f'Created sponsor history: {sponsor.name} - {amount}')
+            self.stdout.write(f'Created sponsor history: {sponsor.name} - {college.name}')
         
         # Create sample college sponsorship history
         for i in range(5):
             college = random.choice(colleges)
             sponsor = random.choice(sponsors)
             event_type = random.choice(['sponsor_event', 'college_event'])
-            
-            if event_type == 'sponsor_event':
-                event_id = random.choice(sponsor_events).id
-            else:
-                event_id = random.choice(college_events).id
-                
+            event_id = random.randint(1, 5)
             amount = Decimal(random.randint(1000, 5000))
             
             history = CollegeSponsorshipHistory.objects.create(
@@ -289,6 +279,6 @@ class Command(BaseCommand):
                 event_type=event_type,
                 amount=amount
             )
-            self.stdout.write(f'Created college sponsorship history: {college.name} - {amount}')
+            self.stdout.write(f'Created college sponsorship history: {college.name} - {sponsor.name}')
         
-        self.stdout.write(self.style.SUCCESS('Successfully added sample data to the database')) 
+        self.stdout.write(self.style.SUCCESS('Successfully added sample data')) 

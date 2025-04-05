@@ -1,7 +1,9 @@
 from django.urls import path
 from .views import (HomeView, sponsor_list, client_list,
                    PricingView, create_sponsor, create_client,
-                   login, signup, logout, get_current_user, refresh_token)
+                   login, signup, logout, get_current_user, refresh_token,
+                   add_event, my_requests, my_history, profile, settings,
+                   register_interest)
 
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
@@ -15,4 +17,12 @@ urlpatterns = [
     path('logout/', logout, name='logout'),
     path('api/current-user/', get_current_user, name='get_current_user'),
     path('api/refresh-token/', refresh_token, name='refresh_token'),
+    
+    # Sponsor dashboard URLs
+    path('add-event/', add_event, name='add_event'),
+    path('my-requests/', my_requests, name='my_requests'),
+    path('my-history/', my_history, name='my_history'),
+    path('profile/', profile, name='profile'),
+    path('settings/', settings, name='settings'),
+    path('api/events/<int:event_id>/interest/', register_interest, name='register_interest'),
 ]
