@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from .models import SponsorListing, ClientListing, Sponsor, College, SponsorEvent, CollegeEvent
+from .models import SponsorListing, ClientListing, Sponsor, College, SponsorEvent, CollegeEvent, EventRequest, SponsorHistory, CollegeSponsorshipHistory
 from .forms import SponsorForm, ClientForm, LoginForm, SignupForm
 from django.contrib import messages
 from django.views.generic import TemplateView
@@ -7,7 +7,9 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.http import JsonResponse
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.views.decorators.csrf import csrf_exempt
+from bson import ObjectId
 import json
+from datetime import datetime
 
 def sponsor_list(request):
     # Get data from both old and new models
@@ -38,21 +40,34 @@ def sponsor_list(request):
     events = []
     for event in college_events:
         events.append({
-            'id': event.id,
-            'college_name': event.college.name if hasattr(event, 'college') else 'Unknown College',
-            'rating': event.college.rating if hasattr(event, 'college') and hasattr(event.college, 'rating') else 4.5,
+            'id': str(event.id),  # MongoEngine uses id instead of _id
+            'college_name': event.college.name if event.college else 'Unknown College',
+            'rating': event.college.avg_rating if event.college else 4.5,
             'amount': event.amount,
-            'deliverables': event.deliverables.split(',') if event.deliverables else ['Brand visibility', 'Social media promotion'],
-            'date': event.date,
-            'location': event.location,
-            'expected_attendance': event.expected_attendance
+            'deliverables': event.basic_deliverables.split(',') if event.basic_deliverables else ['Brand visibility', 'Social media promotion'],
+            'date': event.created_at,  # Using created_at as date for now
+            'location': event.college.state if event.college else 'Location not specified',
+            'expected_attendance': '1000+',  # Default value since it's not in the model
+            'description': event.description
         })
     
-    return render(request, 'listings/sponsor_list.html', {
-        'sponsors': all_sponsors,
-        'sponsor_events': sponsor_events,
-        'events': events
-    })
+    # Determine what to show based on user type
+    user_type = request.session.get('user_type', '')
+    if user_type == 'sponsor':
+        # Show college events to sponsors
+        return render(request, 'listings/sponsor_list.html', {
+            'events': events,
+            'page_title': 'College Events Looking for Sponsors',
+            'show_college_events': True
+        })
+    else:
+        # Show sponsor events to colleges
+        return render(request, 'listings/sponsor_list.html', {
+            'sponsors': all_sponsors,
+            'sponsor_events': sponsor_events,
+            'page_title': 'Sponsors Looking for Events',
+            'show_college_events': False
+        })
 
 def client_list(request):
     # Get data from both old and new models
@@ -85,10 +100,16 @@ def create_sponsor(request):
     if request.method == 'POST':
         form = SponsorForm(request.POST)
         if form.is_valid():
-            instance = form.save(commit=False)
-            instance.user = request.user
-            instance.is_active = True  # Set to False if payment required
-            instance.save()
+            listing = SponsorListing(
+                user=request.user,
+                name=form.cleaned_data['name'],
+                description=form.cleaned_data['description'],
+                budget=form.cleaned_data['budget'],
+                contact_email=form.cleaned_data['contact_email'],
+                created_at=datetime.now(),
+                is_active=True
+            )
+            listing.save()
             messages.success(request, 'Sponsor listing created successfully!')
             return redirect('sponsor-list')
     else:
@@ -99,10 +120,16 @@ def create_client(request):
     if request.method == 'POST':
         form = ClientForm(request.POST)
         if form.is_valid():
-            instance = form.save(commit=False)
-            instance.user = request.user
-            instance.is_active = True  # Set to False if payment required
-            instance.save()
+            listing = ClientListing(
+                user=request.user,
+                event_name=form.cleaned_data['event_name'],
+                description=form.cleaned_data['description'],
+                required_funding=form.cleaned_data['required_funding'],
+                contact_email=form.cleaned_data['contact_email'],
+                created_at=datetime.now(),
+                is_active=True
+            )
+            listing.save()
             messages.success(request, 'Client listing created successfully!')
             return redirect('client-list')
     else:
@@ -123,12 +150,12 @@ def login(request):
                     if check_password(password, user.password):
                         # Create JWT tokens with custom claims
                         refresh = RefreshToken()
-                        refresh['user_id'] = user.sponsor_id
+                        refresh['user_id'] = str(user.id)  # MongoEngine uses id
                         refresh['user_type'] = 'sponsor'
                         refresh['email'] = user.email
 
                         # Store user info in session
-                        request.session['user_id'] = user.sponsor_id
+                        request.session['user_id'] = str(user.id)
                         request.session['user_type'] = 'sponsor'
                         request.session['user_name'] = user.name
                         request.session['user_email'] = user.email
@@ -138,7 +165,7 @@ def login(request):
                         request.session['refresh_token'] = str(refresh)
 
                         messages.success(request, 'Successfully logged in as sponsor!')
-                        return redirect('sponsor-list')
+                        return redirect('sponsor-list')  # Redirect sponsors to see college events
                 except Sponsor.DoesNotExist:
                     pass
             else:
@@ -147,12 +174,12 @@ def login(request):
                     if check_password(password, user.password):
                         # Create JWT tokens with custom claims
                         refresh = RefreshToken()
-                        refresh['user_id'] = user.college_id
+                        refresh['user_id'] = str(user.id)  # MongoEngine uses id
                         refresh['user_type'] = 'college'
                         refresh['email'] = user.email
 
                         # Store user info in session
-                        request.session['user_id'] = user.college_id
+                        request.session['user_id'] = str(user.id)
                         request.session['user_type'] = 'college'
                         request.session['user_name'] = user.name
                         request.session['user_email'] = user.email
@@ -162,7 +189,7 @@ def login(request):
                         request.session['refresh_token'] = str(refresh)
 
                         messages.success(request, 'Successfully logged in as college!')
-                        return redirect('client-list')
+                        return redirect('sponsor-list')  # Redirect colleges to see sponsor events
                 except College.DoesNotExist:
                     pass
 
@@ -180,23 +207,26 @@ def signup(request):
 
             try:
                 if user_type == 'sponsor':
-                    user = Sponsor.objects.create(
+                    user = Sponsor(
                         name=form.cleaned_data['name'],
                         email=form.cleaned_data['email'],
                         contact_no=form.cleaned_data['contact_no'],
                         address=form.cleaned_data['address'],
                         state=form.cleaned_data['state'],
-                        password=password
+                        password=password,
+                        created_at=datetime.now()
                     )
                 else:
-                    user = College.objects.create(
+                    user = College(
                         name=form.cleaned_data['name'],
                         email=form.cleaned_data['email'],
                         contact_no=form.cleaned_data['contact_no'],
                         address=form.cleaned_data['address'],
                         state=form.cleaned_data['state'],
-                        password=password
+                        password=password,
+                        created_at=datetime.now()
                     )
+                user.save()
                 messages.success(request, 'Account created successfully! Please login.')
                 return redirect('login')
             except Exception as e:
@@ -208,14 +238,9 @@ def signup(request):
 def logout(request):
     # Clear the session
     request.session.flush()
-
-    # Add a success message
     messages.success(request, 'You have been successfully logged out.')
-
-    # Redirect to login page
     return redirect('login')
 
-# API endpoint to get current user info
 def get_current_user(request):
     if 'user_id' in request.session and 'user_type' in request.session:
         user_id = request.session['user_id']
@@ -235,7 +260,6 @@ def get_current_user(request):
             'is_authenticated': False
         })
 
-# API endpoint to refresh token
 def refresh_token(request):
     if 'refresh_token' in request.session:
         try:
@@ -253,85 +277,111 @@ class PricingView(TemplateView):
 class HomeView(TemplateView):
     template_name = 'listings/home.html'
 
-# Sponsor dashboard views
 def add_event(request):
-    # Check if user is logged in and is a sponsor
-    if not request.session.get('user_id'):
-        messages.error(request, 'You must be logged in to add an event.')
+    if 'user_id' not in request.session:
+        messages.error(request, 'Please login first')
         return redirect('login')
     
-    if request.method == 'POST':
-        # Handle form submission
-        # This is a placeholder - implement actual form handling
-        messages.success(request, 'Event added successfully!')
-        return redirect('sponsor-list')
-    
-    return render(request, 'listings/add_event.html')
+    user_type = request.session.get('user_type')
+    if user_type == 'sponsor':
+        return render(request, 'listings/add_sponsor_event.html')
+    else:
+        return render(request, 'listings/add_college_event.html')
 
 def my_requests(request):
-    # Check if user is logged in
-    if not request.session.get('user_id'):
-        messages.error(request, 'You must be logged in to view your requests.')
+    if 'user_id' not in request.session:
+        messages.error(request, 'Please login first')
         return redirect('login')
     
-    # Get user's requests
-    # This is a placeholder - implement actual data retrieval
-    requests = []
+    user_id = request.session['user_id']
+    user_type = request.session['user_type']
+    
+    if user_type == 'sponsor':
+        requests = EventRequest.objects(sponsor=user_id)
+    else:
+        requests = EventRequest.objects(college=user_id)
     
     return render(request, 'listings/my_requests.html', {'requests': requests})
 
 def my_history(request):
-    # Check if user is logged in
-    if not request.session.get('user_id'):
-        messages.error(request, 'You must be logged in to view your history.')
+    if 'user_id' not in request.session:
+        messages.error(request, 'Please login first')
         return redirect('login')
     
-    # Get user's history
-    # This is a placeholder - implement actual data retrieval
-    history = []
+    user_id = request.session['user_id']
+    user_type = request.session['user_type']
+    
+    if user_type == 'sponsor':
+        history = SponsorHistory.objects(sponsor=user_id)
+    else:
+        history = CollegeSponsorshipHistory.objects(college=user_id)
     
     return render(request, 'listings/my_history.html', {'history': history})
 
 def profile(request):
-    # Check if user is logged in
-    if not request.session.get('user_id'):
-        messages.error(request, 'You must be logged in to view your profile.')
+    if 'user_id' not in request.session:
+        messages.error(request, 'Please login first')
         return redirect('login')
     
-    # Get user's profile
-    # This is a placeholder - implement actual data retrieval
-    user_id = request.session.get('user_id')
-    user = Sponsor.objects.filter(id=user_id).first()
+    user_id = request.session['user_id']
+    user_type = request.session['user_type']
+    
+    if user_type == 'sponsor':
+        user = Sponsor.objects.get(id=user_id)
+    else:
+        user = College.objects.get(id=user_id)
     
     return render(request, 'listings/profile.html', {'user': user})
 
 def settings(request):
-    # Check if user is logged in
-    if not request.session.get('user_id'):
-        messages.error(request, 'You must be logged in to access settings.')
+    if 'user_id' not in request.session:
+        messages.error(request, 'Please login first')
         return redirect('login')
     
-    # Get user's settings
-    # This is a placeholder - implement actual data retrieval
-    user_id = request.session.get('user_id')
-    user = Sponsor.objects.filter(id=user_id).first()
+    user_id = request.session['user_id']
+    user_type = request.session['user_type']
+    
+    if user_type == 'sponsor':
+        user = Sponsor.objects.get(id=user_id)
+    else:
+        user = College.objects.get(id=user_id)
     
     return render(request, 'listings/settings.html', {'user': user})
 
 @csrf_exempt
 def register_interest(request, event_id):
-    # Check if user is logged in
-    if not request.session.get('user_id'):
-        return JsonResponse({'success': False, 'message': 'You must be logged in to register interest.'})
+    if 'user_id' not in request.session:
+        return JsonResponse({'status': 'error', 'message': 'Please login first'})
     
-    # Get the event
     try:
-        event = CollegeEvent.objects.get(id=event_id)
-    except CollegeEvent.DoesNotExist:
-        return JsonResponse({'success': False, 'message': 'Event not found.'})
-    
-    # Register interest
-    # This is a placeholder - implement actual interest registration
-    # For example, create a new Interest model and save the interest
-    
-    return JsonResponse({'success': True, 'message': 'Interest registered successfully!'})
+        user_id = request.session['user_id']
+        user_type = request.session['user_type']
+        
+        if user_type == 'sponsor':
+            event = CollegeEvent.objects.get(id=event_id)
+            request = EventRequest(
+                sponsor=user_id,
+                college=event.college.id,
+                event_id=event_id,
+                event_type='college_event',
+                status='pending',
+                price=event.amount,
+                basic_deliverables=event.basic_deliverables,
+                created_at=datetime.now()
+            )
+        else:
+            event = SponsorEvent.objects.get(id=event_id)
+            request = EventRequest(
+                college=user_id,
+                sponsor=event.sponsor.id,
+                event_id=event_id,
+                event_type='sponsor_event',
+                status='pending',
+                price=event.amount,
+                basic_deliverables=event.keywords,
+                created_at=datetime.now()
+            )
+        request.save()
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)})

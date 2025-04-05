@@ -24,5 +24,5 @@ urlpatterns = [
     path('my-history/', my_history, name='my_history'),
     path('profile/', profile, name='profile'),
     path('settings/', settings, name='settings'),
-    path('api/events/<int:event_id>/interest/', register_interest, name='register_interest'),
+    path('api/events/<str:event_id>/interest/', register_interest, name='register_interest'),
 ]

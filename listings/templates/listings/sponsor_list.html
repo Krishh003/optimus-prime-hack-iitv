@@ -41,63 +41,89 @@
     </div>
 </nav>
 {% endblock %} {% block content %}
-<!-- Main Content -->
-<div class="container">
-    <h2 class="text-center mb-4">Available Sponsorship Opportunities</h2>
+<div class="container mt-5">
+    <h1 class="text-center mb-4">{{ page_title }}</h1>
 
-    <div class="row">
-        {% for event in events %}
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-header bg-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">{{ event.college_name }}</h5>
-                        <div class="rating">
-                            <i class="fas fa-star text-warning"></i>
-                            <span>{{ event.rating }}/5.0</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <h6 class="text-primary">Sponsorship Amount</h6>
-                        <h3 class="mb-0">₹{{ event.amount|intcomma }}</h3>
-                    </div>
-
-                    <div class="mb-3">
-                        <h6 class="text-primary">Deliverables</h6>
+    {% if show_college_events %}
+        <!-- College Events Section -->
+        <div class="row">
+            {% for event in events %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ event.college_name }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">{{ event.event_name }}</h6>
+                        <p class="card-text">{{ event.description }}</p>
                         <ul class="list-unstyled">
-                            {% for deliverable in event.deliverables %}
-                            <li><i class="fas fa-check text-success me-2"></i>{{ deliverable }}</li>
-                            {% endfor %}
+                            <li><strong>Budget:</strong> ${{ event.amount }}</li>
+                            <li><strong>Location:</strong> {{ event.location }}</li>
+                            <li><strong>Expected Attendance:</strong> {{ event.expected_attendance }}</li>
+                            <li><strong>Deliverables:</strong></li>
+                            <ul>
+                                {% for deliverable in event.deliverables %}
+                                <li>{{ deliverable }}</li>
+                                {% endfor %}
+                            </ul>
                         </ul>
+                        <button class="btn btn-primary" onclick="registerInterest('{{ event.id }}')">Register Interest</button>
                     </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <p class="text-center">No college events available at the moment.</p>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- Sponsors Section -->
+        <div class="row">
+            {% for sponsor in sponsors %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ sponsor.name }}</h5>
+                        <p class="card-text">{{ sponsor.description }}</p>
+                        <ul class="list-unstyled">
+                            <li><strong>Email:</strong> {{ sponsor.email }}</li>
+                            <li><strong>Contact:</strong> {{ sponsor.contact_no }}</li>
+                            <li><strong>Location:</strong> {{ sponsor.state }}</li>
+                        </ul>
+                        <button class="btn btn-primary" onclick="contactSponsor('{{ sponsor.id }}')">Contact Sponsor</button>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <p class="text-center">No sponsors available at the moment.</p>
+            </div>
+            {% endfor %}
+        </div>
 
-                    <div class="mb-3">
-                        <h6 class="text-primary">Event Details</h6>
-                        <p class="mb-1"><i class="fas fa-calendar me-2"></i>{{ event.date }}</p>
-                        <p class="mb-1"><i class="fas fa-map-marker-alt me-2"></i>{{ event.location }}</p>
-                        <p class="mb-0"><i class="fas fa-users me-2"></i>Expected Attendance: {{ event.expected_attendance }}</p>
+        <!-- Sponsor Events Section -->
+        <h2 class="text-center mt-5 mb-4">Sponsor Events</h2>
+        <div class="row">
+            {% for event in sponsor_events %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ event.event_name }}</h5>
+                        <p class="card-text">{{ event.description }}</p>
+                        <ul class="list-unstyled">
+                            <li><strong>Budget:</strong> ${{ event.amount }}</li>
+                            <li><strong>Keywords:</strong> {{ event.keywords }}</li>
+                        </ul>
+                        <button class="btn btn-primary" onclick="registerInterest('{{ event.id }}')">Register Interest</button>
                     </div>
                 </div>
-                <div class="card-footer bg-white border-top-0">
-                    <button class="btn btn-primary w-100" onclick="showInterest('{{ event.id }}')">
-                        <i class="fas fa-handshake me-2"></i>I'm Interested
-                    </button>
-                    <p class="text-muted small text-center mt-2 mb-0">
-                        <i class="fas fa-info-circle me-1"></i>All deliverables are negotiable
-                    </p>
-                </div>
             </div>
-        </div>
-        {% empty %}
-        <div class="col-12 text-center">
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>No sponsorship opportunities available at the moment.
+            {% empty %}
+            <div class="col-12">
+                <p class="text-center">No sponsor events available at the moment.</p>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
+    {% endif %}
 </div>
 
 <style>
@@ -162,46 +188,31 @@
 </style>
 
 <script>
-    function showInterest(eventId) {
-        // Show a confirmation modal
-        if (confirm('Are you interested in sponsoring this event? This will notify the college.')) {
-            // Send interest to backend
-            fetch('/api/events/' + eventId + '/interest/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Interest registered successfully! The college will be notified.');
-                    } else {
-                        alert('Failed to register interest. Please try again.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
-                });
+function registerInterest(eventId) {
+    fetch(`/api/events/${eventId}/interest/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
         }
-    }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('Interest registered successfully!');
+        } else {
+            alert('Error registering interest: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error registering interest. Please try again.');
+    });
+}
 
-    // Helper function to get CSRF token
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
+function contactSponsor(sponsorId) {
+    // Implement contact sponsor functionality
+    alert('Contact functionality coming soon!');
+}
 </script>
 {% endblock %}

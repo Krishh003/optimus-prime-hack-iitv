@@ -39,9 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
-    'listings.apps.ListingsConfig',  # Add this line
-    'rest_framework',  # Add REST framework
-    'rest_framework_simplejwt',  # Add JWT
+    'listings.apps.ListingsConfig',
+    'rest_framework',
+    'rest_framework_simplejwt',
 ]
 
 MIDDLEWARE = [
@@ -81,15 +81,30 @@ WSGI_APPLICATION = 'sponsorship_site.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'djongo',
-        'NAME': 'sponsorship_db',
-        'CLIENT': {
-            'host': 'localhost',
-            'port': 27017,
-        }
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
+# MongoEngine settings
+MONGODB_URI = 'mongodb+srv://akarshhankumar003:Tko5Ogjo14tJVCr3@mycluster.bbxqfyf.mongodb.net/?retryWrites=true&w=majority&appName=mycluster'
+MONGODB_NAME = 'sponsorship_db'
+
+from mongoengine import connect
+import ssl
+
+# Connect to MongoDB with SSL settings
+connect(
+    db=MONGODB_NAME,
+    host=MONGODB_URI,
+    alias='default',
+    ssl_cert_reqs=ssl.CERT_NONE  # Disable SSL certificate verification for development
+)
+
+# Authentication settings
+AUTHENTICATION_BACKENDS = [
+    'listings.backends.MongoEngineBackend',
+]
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

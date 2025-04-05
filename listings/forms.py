@@ -1,15 +1,17 @@
 from django import forms
 from .models import SponsorListing, ClientListing, Sponsor, College
 
-class SponsorForm(forms.ModelForm):
-    class Meta:
-        model = SponsorListing
-        fields = ['name', 'description', 'budget', 'contact_email']
+class SponsorForm(forms.Form):
+    name = forms.CharField(max_length=100)
+    description = forms.CharField(widget=forms.Textarea)
+    budget = forms.DecimalField(max_digits=10, decimal_places=2)
+    contact_email = forms.EmailField()
 
-class ClientForm(forms.ModelForm):
-    class Meta:
-        model = ClientListing
-        fields = ['event_name', 'description', 'required_funding', 'contact_email']
+class ClientForm(forms.Form):
+    event_name = forms.CharField(max_length=100)
+    description = forms.CharField(widget=forms.Textarea)
+    required_funding = forms.DecimalField(max_digits=10, decimal_places=2)
+    contact_email = forms.EmailField()
 
 class LoginForm(forms.Form):
     email = forms.EmailField()
