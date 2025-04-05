@@ -1,3 +1,6 @@
+from django.shortcuts import render, redirect
+from .models import Sponsor, College, SponsorEvent, CollegeEvent
+from .forms import SponsorForm, ClientForm
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
@@ -8,30 +11,64 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 from .models import Sponsor, College, SponsorEvent, CollegeEvent, EventRequest, SponsorHistory, CollegeSponsorshipHistory, EVENT_TYPE_CHOICES
 from .forms import SponsorRegistrationForm, CollegeRegistrationForm, SponsorEventForm, CollegeEventForm
+from django.views.generic import TemplateView
 
+def sponsor_list(request):
+    sponsors = Sponsor.objects.all()
+    sponsor_events = SponsorEvent.objects.all()
+    return render(request, 'listings/sponsor_list.html', {
+        'sponsors': sponsors,
+        'sponsor_events': sponsor_events
+    })
 def home(request):
     return render(request, 'listings/home.html')
 
+def client_list(request):
+    colleges = College.objects.all()
+    college_events = CollegeEvent.objects.all()
+    return render(request, 'listings/client_list.html', {
+        'colleges': colleges,
+        'college_events': college_events
+    })
+
+def create_sponsor(request):
+    if request.method == 'POST':
+        form = SponsorForm(request.POST)
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.user = request.user
+            instance.is_active = True  # Set to False if payment required
+            instance.save()
+            messages.success(request, 'Sponsor listing created successfully!')
+            return redirect('sponsor-list')
+    else:
+        form = SponsorForm()
+    return render(request, 'listings/create_sponsor.html', {'form': form})
+
 def register_sponsor(request):
     if request.method == 'POST':
-        form = SponsorRegistrationForm(request.POST)
+        form = SponsorForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, 'Registration successful!')
-            return redirect('sponsor_dashboard')
+            instance = form.save(commit=False)
+            instance.user = request.user
+            instance.is_active = True  # Set to False if payment required
+            instance.save()
+            messages.success(request, 'Sponsor listing created successfully!')
+            return redirect('sponsor-list')
     else:
-        form = SponsorRegistrationForm()
-    return render(request, 'listings/register_sponsor.html', {'form': form})
+        form = SponsorForm()
+    return render(request, 'listings/create_sponsor.html', {'form': form})
 
-def register_college(request):
+def create_client(request):
     if request.method == 'POST':
-        form = CollegeRegistrationForm(request.POST)
+        form = ClientForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, 'Registration successful!')
-            return redirect('college_dashboard')
+            instance = form.save(commit=False)
+            instance.user = request.user
+            instance.is_active = True  # Set to False if payment required
+            instance.save()
+            messages.success(request, 'Client listing created successfully!')
+            return redirect('client-list')
     else:
         form = CollegeRegistrationForm()
     return render(request, 'listings/register_college.html', {'form': form})
@@ -41,7 +78,7 @@ def sponsor_dashboard(request):
     event_type = request.GET.get('event_type')
     budget = request.GET.get('budget')
     state = request.GET.get('state')
-    
+
     # Create some dummy data for display
     events = [
         {
@@ -75,7 +112,7 @@ def sponsor_dashboard(request):
             'created_at': '2025-04-03'
         }
     ]
-    
+
     context = {
         'events': events,
         'filters': {
@@ -91,7 +128,7 @@ def college_dashboard(request):
     if not isinstance(request.user, Sponsor) or not request.user.is_college:
         messages.error(request, 'Access denied. Please login as a college.')
         return redirect('home')
-    
+
     events = CollegeEvent.objects.filter(college=request.user)
     return render(request, 'listings/college_dashboard.html', {'events': events})
 
@@ -100,14 +137,14 @@ def create_sponsor_event(request):
     if not hasattr(request.user, 'sponsor'):
         messages.error(request, "Only sponsors can create events.")
         return redirect('home')
-    
+
     if request.method == 'POST':
         event_name = request.POST.get('event_name')
         event_type = request.POST.get('event_type')
         amount = request.POST.get('amount')
         description = request.POST.get('description')
         deliverables = request.POST.getlist('deliverables[]')
-        
+
         try:
             # Create the sponsor event
             sponsor_event = SponsorEvent.objects.create(
@@ -123,7 +160,7 @@ def create_sponsor_event(request):
         except Exception as e:
             messages.error(request, f"Error creating event: {str(e)}")
             return render(request, 'listings/create_sponsor_event.html')
-    
+
     return render(request, 'listings/create_sponsor_event.html')
 
 @login_required
@@ -131,7 +168,7 @@ def create_college_event(request):
     if not request.user.is_college:
         messages.error(request, "Only colleges can create events.")
         return redirect('home')
-    
+
     if request.method == 'POST':
         try:
             event = CollegeEvent.objects.create(
@@ -147,7 +184,7 @@ def create_college_event(request):
             return redirect('college_dashboard')
         except Exception as e:
             messages.error(request, f"Error creating event: {str(e)}")
-    
+
     context = {
         'form': {'fields': {'event_type': {'choices': EVENT_TYPE_CHOICES}}}
     }
@@ -158,16 +195,16 @@ def send_event_request(request, event_id):
     if not isinstance(request.user, Sponsor):
         messages.error(request, 'Access denied. Please login as a sponsor.')
         return redirect('home')
-    
+
     event = get_object_or_404(CollegeEvent, id=event_id)
-    
+
     if request.method == 'POST':
         # Check if request already exists
         existing_request = EventRequest.objects.filter(
             sponsor=request.user,
             event=event
         ).first()
-        
+
         if existing_request:
             messages.warning(request, 'You have already sent a request for this event.')
         else:
@@ -180,7 +217,7 @@ def send_event_request(request, event_id):
                 basic_deliverables=event.basic_deliverables
             )
             messages.success(request, 'Your interest has been sent to the college.')
-    
+
     return redirect('sponsor_dashboard')
 
 @login_required
@@ -191,7 +228,7 @@ def my_requests(request):
     else:
         requests = EventRequest.objects.filter(college=request.user)
         template = 'listings/college_requests.html'
-    
+
     return render(request, template, {'requests': requests})
 
 @login_required
@@ -202,7 +239,7 @@ def my_history(request):
     else:
         history = CollegeSponsorshipHistory.objects.filter(college=request.user)
         template = 'listings/college_history.html'
-    
+
     return render(request, template, {'history': history})
 
 def sdashboard(request):
@@ -240,7 +277,7 @@ def sdashboard(request):
             'created_at': now - timedelta(hours=12)
         }
     ]
-    
+
     context = {
         'events': events,
     }

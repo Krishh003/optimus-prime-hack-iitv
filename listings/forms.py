@@ -39,3 +39,11 @@ class CollegeEventForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'rows': 4}),
             'basic_deliverables': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Enter deliverables separated by commas'}),
         }
+
+
+class SponsorForm:
+    pass
+
+
+class ClientForm:
+    pass
