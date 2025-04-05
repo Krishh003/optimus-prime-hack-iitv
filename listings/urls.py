@@ -6,8 +6,7 @@ from .views import (HomeView, sponsor_list, client_list,
                    register_interest, create_college_event, create_sponsor_event,
                    create_admin, admin_list, delete_admin, admin_dashboard,
                    cancel_request, request_details, accept_request,
-                   chat_view, send_message, get_messages, event_details, edit_event,
-                   delete_request, cleanup_invalid_requests)
+                   chat_view, send_message, get_messages, event_details, edit_event)
 
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
@@ -37,7 +36,6 @@ urlpatterns = [
     path('api/events/<str:event_id>/interest/', register_interest, name='register_interest'),
     path('api/requests/<str:request_id>/cancel/', cancel_request, name='cancel-request'),
     path('api/requests/<str:request_id>/accept/', accept_request, name='accept-request'),
-    path('api/requests/<str:request_id>/delete/', delete_request, name='delete-request'),
     path('requests/<str:request_id>/', request_details, name='request-details'),
     path('create-college-event/', create_college_event, name='create-college-event'),
     path('create-sponsor-event/', create_sponsor_event, name='create-sponsor-event'),
@@ -46,5 +44,4 @@ urlpatterns = [
     path('api/chat/<str:request_id>/messages/', get_messages, name='get_messages'),
     path('events/<str:event_id>/', event_details, name='event_details'),
     path('events/<str:event_id>/edit/', edit_event, name='edit_event'),
-    path('api/cleanup-invalid-requests/', cleanup_invalid_requests, name='cleanup-invalid-requests'),
 ]

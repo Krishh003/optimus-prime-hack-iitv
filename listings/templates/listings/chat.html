@@ -20,6 +20,9 @@
                         <i class="fas fa-user-circle"></i>
                     </div>
                     <h5>{{ other_party.name }}</h5>
+                    <p class="text-muted">
+                        <i class="fas fa-envelope me-2"></i>{{ other_party.email }}
+                    </p>
                 </div>
                 <hr>
                 <div class="chat-actions">
@@ -64,21 +67,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const chatMessages = document.getElementById('chatMessages');
     const messageForm = document.getElementById('messageForm');
     const messageInput = document.getElementById('messageInput');
-    let isPolling = true;
     
     function scrollToBottom() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-    
-    function showError(message) {
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'alert alert-danger alert-dismissible fade show';
-        errorDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        `;
-        chatMessages.appendChild(errorDiv);
-        scrollToBottom();
     }
     
     scrollToBottom();
@@ -100,11 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.error) {
-                showError(data.error);
-                if (data.error.includes('no longer valid') || data.error.includes('permission')) {
-                    isPolling = false;
-                    window.location.href = "{% url 'my_requests' %}";
-                }
+                alert(data.error);
             } else {
                 const messageDiv = document.createElement('div');
                 messageDiv.className = 'message message-sent';
@@ -126,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('Error:', error);
-            showError('An error occurred while sending the message.');
+            alert('An error occurred while sending the message.');
         });
     });
     
@@ -136,71 +123,40 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     function pollMessages() {
-        if (!isPolling) return;
-        
         fetch(`/api/chat/{{ request_id }}/messages/`)
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.error || 'Failed to fetch messages');
-                    });
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                if (data.error) {
-                    showError(data.error);
-                    if (data.error.includes('no longer valid') || 
-                        data.error.includes('permission') || 
-                        data.error.includes('not found') ||
-                        data.error.includes('Invalid request ID')) {
-                        isPolling = false;
-                        window.location.href = "{% url 'my_requests' %}";
-                    }
-                    return;
-                }
-                
-                const currentMessageIds = new Set(
-                    Array.from(chatMessages.children)
-                        .filter(el => el.classList.contains('message'))
-                        .map(el => el.dataset.messageId)
-                );
-                
-                let hasNewMessages = false;
-                data.forEach(message => {
-                    if (!currentMessageIds.has(message.id)) {
-                        hasNewMessages = true;
-                        const messageDiv = document.createElement('div');
-                        messageDiv.className = `message ${message.sender.id === '{{ user_id }}' ? 'message-sent' : 'message-received'}`;
-                        messageDiv.dataset.messageId = message.id;
-                        messageDiv.innerHTML = `
-                            <div class="message-content">
-                                <div class="message-text">${message.message}</div>
-                                <div class="message-meta">
-                                    <span class="message-time">${new Date(message.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
-                                    <span class="message-date">${new Date(message.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                if (!data.error) {
+                    const currentMessageIds = new Set(
+                        Array.from(chatMessages.children).map(el => el.dataset.messageId)
+                    );
+                    
+                    let hasNewMessages = false;
+                    data.forEach(message => {
+                        if (!currentMessageIds.has(message.id)) {
+                            hasNewMessages = true;
+                            const messageDiv = document.createElement('div');
+                            messageDiv.className = `message ${message.sender.id === '{{ user_id }}' ? 'message-sent' : 'message-received'}`;
+                            messageDiv.dataset.messageId = message.id;
+                            messageDiv.innerHTML = `
+                                <div class="message-content">
+                                    <div class="message-text">${message.message}</div>
+                                    <div class="message-meta">
+                                        <span class="message-time">${new Date(message.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+                                        <span class="message-date">${new Date(message.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                    </div>
                                 </div>
-                            </div>
-                        `;
-                        chatMessages.appendChild(messageDiv);
+                            `;
+                            chatMessages.appendChild(messageDiv);
+                        }
+                    });
+                    
+                    if (hasNewMessages) {
+                        scrollToBottom();
                     }
-                });
-                
-                if (hasNewMessages) {
-                    scrollToBottom();
                 }
             })
-            .catch(error => {
-                console.error('Error polling messages:', error);
-                showError(error.message || 'An error occurred while fetching messages.');
-                if (error.message.includes('no longer valid') || 
-                    error.message.includes('permission') || 
-                    error.message.includes('not found') ||
-                    error.message.includes('Invalid request ID')) {
-                    isPolling = false;
-                    window.location.href = "{% url 'my_requests' %}";
-                }
-            });
+            .catch(error => console.error('Error polling messages:', error));
     }
     
     pollMessages();

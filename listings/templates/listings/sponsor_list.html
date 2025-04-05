@@ -155,9 +155,69 @@
             grid-template-columns: 1fr;
         }
     }
+    
+    /* Search Bar Styles */
+    .search-container {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    
+    .search-input {
+        border: 2px solid var(--light-purple);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+    
+    .search-input:focus {
+        border-color: var(--violet);
+        box-shadow: 0 0 0 0.2rem rgba(138, 43, 226, 0.25);
+        outline: none;
+    }
+    
+    .search-icon {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--violet);
+    }
+    
+    .search-filters {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .filter-btn {
+        background: var(--light-purple);
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        color: var(--dark-purple);
+        transition: all 0.3s ease;
+    }
+    
+    .filter-btn:hover, .filter-btn.active {
+        background: var(--violet);
+        color: white;
+    }
 </style>
 
 <div class="container mt-4">
+    <!-- Search Section -->
+    <div class="search-container">
+        <div class="position-relative">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search events by keywords, tags, or description...">
+            <i class="fas fa-search search-icon"></i>
+        </div>
+    </div>
+
     <div class="row mb-4 align-items-center">
         <div class="col-md-6">
             <h2 style="background: linear-gradient(135deg, var(--midnight-blue) 0%, var(--dark-purple) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; font-size: 3.5 rem;">
@@ -179,7 +239,7 @@
         </div>
     </div>
 
-    <div class="row g-4">
+    <div class="row g-4" id="eventsContainer">
         {% for event in events %}
         <div class="col-lg-4 col-md-6 mb-4">
             <div class="vertical-card">
@@ -214,8 +274,8 @@
                             <strong style="color: var(--violet);">{{ event.expected_attendance|default:"0" }}</strong>
                         </div>
                         <div class="stat-item">
-                            <small class="text-muted d-block">Location</small>
-                            <strong style="color: var(--violet);">{{ event.location }}</strong>
+                            <small class="text-muted d-block">Deliverables</small>
+                            <strong style="color: var(--violet);">{{ event.deliverables|default:"0" }}</strong>
                         </div>
                         <div class="stat-item">
                             <small class="text-muted d-block">Posted</small>
@@ -333,6 +393,122 @@ function registerInterest(eventId) {
         }
     });
 }
+
+// Search Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const eventsContainer = document.getElementById('eventsContainer');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    let currentFilter = 'all';
+    let searchTimeout;
+    let noResultsMessage = null;
+    
+    // Debounce function to limit how often the search is performed
+    function debounce(func, wait) {
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(searchTimeout);
+                func(...args);
+            };
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(later, wait);
+        };
+    }
+    
+    // Create no results message element
+    function createNoResultsMessage() {
+        if (!noResultsMessage) {
+            noResultsMessage = document.createElement('div');
+            noResultsMessage.className = 'col-12';
+            noResultsMessage.innerHTML = `
+                <div class="card text-center py-5" style="background: var(--off-white); border: none;">
+                    <div class="card-body">
+                        <i class="fas fa-search display-4 mb-3" style="color: var(--violet);"></i>
+                        <h4 class="mb-3" style="color: var(--dark-purple);">No events found</h4>
+                        <p class="text-muted mb-4">Try adjusting your search terms or filters</p>
+                    </div>
+                </div>
+            `;
+        }
+        return noResultsMessage;
+    }
+    
+    // Search function
+    function performSearch() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const eventCards = document.querySelectorAll('.vertical-card');
+        let visibleCount = 0;
+        
+        eventCards.forEach(card => {
+            const title = card.querySelector('.card-title').textContent.toLowerCase();
+            const description = card.querySelector('.card-text').textContent.toLowerCase();
+            const tags = Array.from(card.querySelectorAll('.tag-badge')).map(tag => tag.textContent.toLowerCase());
+            const amount = card.querySelector('.stat-item:nth-child(1) strong').textContent;
+            const attendance = card.querySelector('.stat-item:nth-child(2) strong').textContent;
+            const date = card.querySelector('.stat-item:nth-child(4) strong').textContent;
+            
+            let matchesSearch = false;
+            
+            // Check if content matches search term
+            if (searchTerm === '' || 
+                title.includes(searchTerm) || 
+                description.includes(searchTerm) || 
+                tags.some(tag => tag.includes(searchTerm))) {
+                matchesSearch = true;
+            }
+            
+            // Apply filter
+            let matchesFilter = true;
+            if (currentFilter !== 'all') {
+                switch(currentFilter) {
+                    case 'amount':
+                        matchesFilter = amount !== '$0';
+                        break;
+                    case 'attendance':
+                        matchesFilter = attendance !== '0';
+                        break;
+                    case 'date':
+                        matchesFilter = date !== 'Jan 01';
+                        break;
+                }
+            }
+            
+            // Show/hide card based on search and filter
+            const cardContainer = card.closest('.col-lg-4');
+            if (matchesSearch && matchesFilter) {
+                cardContainer.style.display = '';
+                visibleCount++;
+            } else {
+                cardContainer.style.display = 'none';
+            }
+        });
+        
+        // Handle no results message
+        const existingNoResults = eventsContainer.querySelector('.col-12');
+        if (visibleCount === 0) {
+            if (!existingNoResults) {
+                eventsContainer.appendChild(createNoResultsMessage());
+            }
+        } else if (existingNoResults) {
+            existingNoResults.remove();
+        }
+    }
+    
+    // Debounced search function
+    const debouncedSearch = debounce(performSearch, 300);
+    
+    // Event listeners
+    searchInput.addEventListener('input', debouncedSearch);
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            currentFilter = this.dataset.filter;
+            performSearch();
+        });
+    });
+});
 </script>
 
 <!-- Toasts -->

@@ -56,6 +56,11 @@ class CollegeEventForm(forms.Form):
         required=True,
         help_text="Enter deliverables separated by commas"
     )
+    keywords = forms.CharField(
+        widget=forms.Textarea,
+        required=True,
+        help_text="Enter keywords separated by commas (e.g., Technology, Innovation, Networking)"
+    )
 
 class SponsorEventForm(forms.Form):
     sponsor_name = forms.CharField(max_length=255, required=True)
@@ -71,9 +76,4 @@ class SponsorEventForm(forms.Form):
         widget=forms.Textarea,
         required=True,
         help_text="Enter keywords separated by commas (e.g., Technology, Innovation, Networking)"
-    )
-    location = forms.CharField(
-        max_length=200,
-        required=True,
-        help_text="Enter the event location"
     )

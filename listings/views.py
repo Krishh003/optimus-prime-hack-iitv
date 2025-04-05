@@ -11,7 +11,6 @@ from bson import ObjectId
 import json
 from datetime import datetime
 from django.views.decorators.http import require_POST
-from django.db.models import Q
 
 def sponsor_list(request):
     # Get data from both old and new models
@@ -306,9 +305,9 @@ class HomeView(TemplateView):
         if 'user_id' in request.session:
             user_type = request.session.get('user_type')
             if user_type == 'sponsor':
-                return redirect('client-list')
-            elif user_type == 'college':
                 return redirect('sponsor-list')
+            elif user_type == 'college':
+                return redirect('client-list')
             elif user_type == 'admin':
                 return redirect('admin-dashboard')
         return super().dispatch(request, *args, **kwargs)
@@ -556,25 +555,17 @@ def register_interest(request, event_id):
             try:
                 event = SponsorEvent.objects.get(id=event_id)
                 event_type = 'sponsor_event'
-                # For sponsor events, the event owner is the sponsor
-                event_owner = event.sponsor
-                # The requesting party is the college
-                requesting_party = College.objects.get(id=user_id)
             except SponsorEvent.DoesNotExist:
                 try:
                     event = CollegeEvent.objects.get(id=event_id)
                     event_type = 'college_event'
-                    # For college events, the event owner is the college
-                    event_owner = event.college
-                    # The requesting party is the sponsor
-                    requesting_party = Sponsor.objects.get(id=user_id)
                 except CollegeEvent.DoesNotExist:
                     return JsonResponse({'error': 'Event not found'}, status=404)
             
             # Create a new event request
             event_request = EventRequest(
-                sponsor=requesting_party if event_type == 'college_event' else event_owner,
-                college=requesting_party if event_type == 'sponsor_event' else event_owner,
+                sponsor=Sponsor.objects.get(id=user_id) if user_type == 'sponsor' else None,
+                college=College.objects.get(id=user_id) if user_type == 'college' else None,
                 event_id=str(event_id),
                 event_type=event_type,
                 status='pending',
@@ -582,9 +573,6 @@ def register_interest(request, event_id):
                 basic_deliverables=event.deliverables if event_type == 'sponsor_event' else event.basic_deliverables,
                 created_at=datetime.now()
             )
-            
-            # Validate the request before saving
-            event_request.clean()
             event_request.save()
             
             return JsonResponse({'message': 'Interest registered successfully'})
@@ -871,56 +859,86 @@ def accept_request(request, request_id):
     try:
         # Validate request_id format
         if not request_id or len(request_id) != 24:
-            print(f"Invalid request_id format: {request_id}")
             return JsonResponse({'error': 'Invalid request ID'}, status=400)
             
         event_request = EventRequest.objects.get(id=ObjectId(request_id))
         user_id = request.session['user_id']
         user_type = request.session['user_type']
         
-        print(f"Attempting to accept request {request_id} by {user_type} {user_id}")
-        print(f"Request status: {event_request.status}")
-        print(f"Request type: {event_request.event_type}")
-        
-        # Check if required references are missing
-        if not event_request.sponsor or not event_request.college:
-            error_msg = 'This request is no longer valid as required information is missing'
-            print(error_msg)
-            return JsonResponse({'error': error_msg}, status=400)
-        
-        # Verify the user has permission to accept this request
-        if event_request.event_type == 'sponsor_event':
-            if user_type != 'college' or str(event_request.college.id) != user_id:
-                error_msg = 'Only the college can accept this request'
-                print(error_msg)
-                return JsonResponse({'error': error_msg}, status=403)
-        else:  # college_event
-            if user_type != 'sponsor' or str(event_request.sponsor.id) != user_id:
-                error_msg = 'Only the sponsor can accept this request'
-                print(error_msg)
-                return JsonResponse({'error': error_msg}, status=403)
-        
-        # Only allow accepting pending requests
-        if event_request.status != 'pending':
-            error_msg = f'Can only accept pending requests. Current status: {event_request.status}'
-            print(error_msg)
-            return JsonResponse({'error': error_msg}, status=400)
+        # Check if the user has permission to accept this request
+        if user_type == 'sponsor':
+            # For sponsor events, only the sponsor who created the event can accept
+            try:
+                event = SponsorEvent.objects.get(id=event_request.event_id)
+                if str(event.sponsor.id) != user_id:
+                    return JsonResponse({'error': 'You do not have permission to accept this request'}, status=403)
+            except SponsorEvent.DoesNotExist:
+                return JsonResponse({'error': 'Event not found'}, status=404)
+        else:
+            # For college events, only the college who created the event can accept
+            try:
+                event = CollegeEvent.objects.get(id=event_request.event_id)
+                if str(event.college.id) != user_id:
+                    return JsonResponse({'error': 'You do not have permission to accept this request'}, status=403)
+            except CollegeEvent.DoesNotExist:
+                return JsonResponse({'error': 'Event not found'}, status=404)
         
         # Update request status
         event_request.status = 'accepted'
         event_request.save()
         
-        print(f"Successfully accepted request {request_id}")
+        # Create history records
+        try:
+            if user_type == 'sponsor':
+                SponsorHistory(
+                    sponsor=event_request.sponsor,
+                    college=event_request.college,
+                    event_id=event_request.event_id,
+                    event_type=event_request.event_type,
+                    amount=event_request.price,
+                    created_at=datetime.now()
+                ).save()
+            else:
+                CollegeSponsorshipHistory(
+                    college=event_request.college,
+                    sponsor=event_request.sponsor,
+                    event_id=event_request.event_id,
+                    event_type=event_request.event_type,
+                    amount=event_request.price,
+                    created_at=datetime.now()
+                ).save()
+        except Exception as e:
+            print(f"Error creating history record: {str(e)}")
+            # Continue even if history creation fails
+        
+        # Create initial chat message
+        try:
+            initial_message = f"Request accepted! Let's discuss the details."
+            chat = Chat(
+                request=event_request,
+                message=initial_message,
+                created_at=datetime.now()
+            )
+            
+            if user_type == 'sponsor':
+                chat.sender = event_request.sponsor
+                chat.receiver = event_request.college
+            else:
+                chat.sender = event_request.college
+                chat.receiver = event_request.sponsor
+                
+            chat.save()
+        except Exception as e:
+            print(f"Error creating chat message: {str(e)}")
+            # Continue even if chat creation fails
+        
         return JsonResponse({'message': 'Request accepted successfully'})
         
     except EventRequest.DoesNotExist:
-        error_msg = f'Request not found: {request_id}'
-        print(error_msg)
-        return JsonResponse({'error': error_msg}, status=404)
+        return JsonResponse({'error': 'Request not found'}, status=404)
     except Exception as e:
-        error_msg = f'An error occurred while accepting the request: {str(e)}'
-        print(error_msg)
-        return JsonResponse({'error': error_msg}, status=500)
+        print(f"Error accepting request: {str(e)}")
+        return JsonResponse({'error': 'An error occurred while accepting the request'}, status=500)
 
 @csrf_exempt
 def chat_view(request, request_id):
@@ -929,70 +947,34 @@ def chat_view(request, request_id):
         return redirect('login')
     
     try:
-        # Validate request_id format
-        if not request_id or len(request_id) != 24:
-            messages.error(request, 'Invalid request ID')
-            return redirect('my_requests')
-            
         event_request = EventRequest.objects.get(id=ObjectId(request_id))
         user_id = request.session['user_id']
         user_type = request.session['user_type']
         
-        # Get event details to verify ownership
-        try:
-            if event_request.event_type == 'sponsor_event':
-                event = SponsorEvent.objects.get(id=event_request.event_id)
-                event_owner_id = str(event.sponsor.id)
-            else:
-                event = CollegeEvent.objects.get(id=event_request.event_id)
-                event_owner_id = str(event.college.id)
-        except (SponsorEvent.DoesNotExist, CollegeEvent.DoesNotExist):
-            messages.error(request, 'Event not found')
-            return redirect('my_requests')
-        
         # Get the other party's information
         if user_type == 'sponsor':
             if not event_request.college:
-                messages.error(request, 'This request is no longer valid as the college information is missing')
+                messages.error(request, 'Invalid request: College information missing')
                 return redirect('my_requests')
             try:
                 other_party = College.objects.get(id=event_request.college.id)
-            except (College.DoesNotExist, AttributeError):
-                messages.error(request, 'The college associated with this request no longer exists')
+            except College.DoesNotExist:
+                messages.error(request, 'College not found')
                 return redirect('my_requests')
         else:
             if not event_request.sponsor:
-                messages.error(request, 'This request is no longer valid as the sponsor information is missing')
+                messages.error(request, 'Invalid request: Sponsor information missing')
                 return redirect('my_requests')
             try:
                 other_party = Sponsor.objects.get(id=event_request.sponsor.id)
-            except (Sponsor.DoesNotExist, AttributeError):
-                messages.error(request, 'The sponsor associated with this request no longer exists')
+            except Sponsor.DoesNotExist:
+                messages.error(request, 'Sponsor not found')
                 return redirect('my_requests')
         
         # Verify the user is part of this request
-        if user_type == 'sponsor':
-            # For sponsor events, only the sponsor who created the event can access chat
-            if event_request.event_type == 'sponsor_event' and event_owner_id != user_id:
-                messages.error(request, 'You do not have permission to access this chat')
-                return redirect('my_requests')
-            # For college events, only the sponsor who made the request can access chat
-            elif event_request.event_type == 'college_event' and str(event_request.sponsor.id) != user_id:
-                messages.error(request, 'You do not have permission to access this chat')
-                return redirect('my_requests')
-        else:
-            # For college events, only the college who created the event can access chat
-            if event_request.event_type == 'college_event' and event_owner_id != user_id:
-                messages.error(request, 'You do not have permission to access this chat')
-                return redirect('my_requests')
-            # For sponsor events, only the college who made the request can access chat
-            elif event_request.event_type == 'sponsor_event' and str(event_request.college.id) != user_id:
-                messages.error(request, 'You do not have permission to access this chat')
-                return redirect('my_requests')
-        
-        # Check if the request is accepted
-        if event_request.status != 'accepted':
-            messages.error(request, 'Chat is only available for accepted requests')
+        if (user_type == 'sponsor' and str(event_request.sponsor.id) != user_id) or \
+           (user_type == 'college' and str(event_request.college.id) != user_id):
+            messages.error(request, 'Unauthorized access')
             return redirect('my_requests')
         
         return render(request, 'listings/chat.html', {
@@ -1056,41 +1038,12 @@ def send_message(request, request_id):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
-@csrf_exempt
 def get_messages(request, request_id):
     if 'user_id' not in request.session:
         return JsonResponse({'error': 'Please login first'}, status=401)
     
     try:
-        # Validate request_id format
-        if not request_id or len(request_id) != 24:
-            print(f"Invalid request_id format: {request_id}")
-            return JsonResponse({'error': 'Invalid request ID format'}, status=400)
-            
         event_request = EventRequest.objects.get(id=ObjectId(request_id))
-        user_id = request.session['user_id']
-        user_type = request.session['user_type']
-        
-        # Validate request references
-        if not event_request.sponsor or not event_request.college:
-            print(f"Missing references for request {request_id}: sponsor={event_request.sponsor}, college={event_request.college}")
-            return JsonResponse({'error': 'This request is no longer valid as required information is missing'}, status=400)
-        
-        # Verify the user is part of this request
-        if user_type == 'sponsor':
-            if str(event_request.sponsor.id) != user_id:
-                print(f"Sponsor {user_id} not authorized to access request {request_id}")
-                return JsonResponse({'error': 'You do not have permission to access these messages'}, status=403)
-        else:
-            if str(event_request.college.id) != user_id:
-                print(f"College {user_id} not authorized to access request {request_id}")
-                return JsonResponse({'error': 'You do not have permission to access these messages'}, status=403)
-        
-        # Check if the request is accepted
-        if event_request.status != 'accepted':
-            print(f"Request {request_id} not in accepted state: {event_request.status}")
-            return JsonResponse({'error': 'Messages are only available for accepted requests'}, status=400)
-        
         messages = Chat.objects.filter(request=event_request).order_by('created_at')
         
         message_list = []
@@ -1132,11 +1085,10 @@ def get_messages(request, request_id):
             })
         
         return JsonResponse(message_list, safe=False)
-    except EventRequest.DoesNotExist:
-        print(f"Request not found: {request_id}")
-        return JsonResponse({'error': 'Request not found'}, status=404)
+    except (EventRequest.DoesNotExist, Sponsor.DoesNotExist, College.DoesNotExist):
+        return JsonResponse({'error': 'Invalid request'}, status=400)
     except Exception as e:
-        print(f"Error in get_messages: {str(e)}")
+        print(f"Error in get_messages: {str(e)}")  # Add logging
         return JsonResponse({'error': 'An error occurred while fetching messages'}, status=500)
 
 def event_details(request, event_id):
@@ -1277,142 +1229,3 @@ def edit_event(request, event_id):
     except Exception as e:
         messages.error(request, f'Error: {str(e)}')
         return redirect('profile')
-
-@csrf_exempt
-def delete_request(request, request_id):
-    if 'user_id' not in request.session:
-        return JsonResponse({'error': 'Please login first'}, status=401)
-    
-    try:
-        # Validate request_id format
-        if not request_id or len(request_id) != 24:
-            print(f"Invalid request_id format: {request_id}")
-            return JsonResponse({'error': 'Invalid request ID'}, status=400)
-            
-        event_request = EventRequest.objects.get(id=ObjectId(request_id))
-        user_id = request.session['user_id']
-        user_type = request.session['user_type']
-        
-        print(f"Attempting to delete request {request_id} by {user_type} {user_id}")
-        print(f"Request status: {event_request.status}")
-        print(f"Request type: {event_request.event_type}")
-        
-        # Special handling for sponsor_event with missing sponsor reference
-        if event_request.event_type == 'sponsor_event':
-            try:
-                # Try to get the event to verify ownership
-                event = SponsorEvent.objects.get(id=event_request.event_id)
-                event_owner_id = str(event.sponsor.id)
-                
-                # If the user is the event owner, allow deletion even if sponsor reference is missing
-                if event_owner_id == user_id:
-                    print(f"Event owner {user_id} deleting sponsor_event with missing sponsor reference")
-                    Chat.objects.filter(request=event_request).delete()
-                    event_request.delete()
-                    return JsonResponse({'message': 'Request deleted successfully'})
-            except SponsorEvent.DoesNotExist:
-                print(f"SponsorEvent not found for id: {event_request.event_id}")
-                pass
-        
-        # Special handling for college_event with missing college reference
-        if event_request.event_type == 'college_event':
-            try:
-                # Try to get the event to verify ownership
-                event = CollegeEvent.objects.get(id=event_request.event_id)
-                event_owner_id = str(event.college.id)
-                
-                # If the user is the event owner, allow deletion even if college reference is missing
-                if event_owner_id == user_id:
-                    print(f"Event owner {user_id} deleting college_event with missing college reference")
-                    Chat.objects.filter(request=event_request).delete()
-                    event_request.delete()
-                    return JsonResponse({'message': 'Request deleted successfully'})
-            except CollegeEvent.DoesNotExist:
-                print(f"CollegeEvent not found for id: {event_request.event_id}")
-                pass
-        
-        # Check if both references are missing
-        if not event_request.sponsor and not event_request.college:
-            print(f"Both references missing for request {request_id}")
-            # If both references are missing, allow deletion
-            Chat.objects.filter(request=event_request).delete()
-            event_request.delete()
-            return JsonResponse({'message': 'Invalid request deleted successfully'})
-        
-        # Verify the user owns this request
-        if user_type == 'sponsor':
-            try:
-                if str(event_request.sponsor.id) != user_id:
-                    error_msg = f'Unauthorized: You do not have permission to delete this request'
-                    print(error_msg)
-                    return JsonResponse({'error': error_msg}, status=403)
-            except AttributeError:
-                error_msg = 'This request is no longer valid as the sponsor information is missing'
-                print(error_msg)
-                return JsonResponse({'error': error_msg}, status=400)
-        else:
-            try:
-                if str(event_request.college.id) != user_id:
-                    error_msg = f'Unauthorized: You do not have permission to delete this request'
-                    print(error_msg)
-                    return JsonResponse({'error': error_msg}, status=403)
-            except AttributeError:
-                error_msg = 'This request is no longer valid as the college information is missing'
-                print(error_msg)
-                return JsonResponse({'error': error_msg}, status=400)
-        
-        # Only allow deleting accepted requests
-        if event_request.status != 'accepted':
-            error_msg = f'Can only delete accepted requests. Current status: {event_request.status}'
-            print(error_msg)
-            return JsonResponse({'error': error_msg}, status=400)
-        
-        # Delete associated chat messages
-        chat_count = Chat.objects.filter(request=event_request).count()
-        print(f"Deleting {chat_count} chat messages for request {request_id}")
-        Chat.objects.filter(request=event_request).delete()
-        
-        # Delete the request
-        event_request.delete()
-        print(f"Successfully deleted request {request_id}")
-        
-        return JsonResponse({'message': 'Request deleted successfully'})
-        
-    except EventRequest.DoesNotExist:
-        error_msg = f'Request not found: {request_id}'
-        print(error_msg)
-        return JsonResponse({'error': error_msg}, status=404)
-    except Exception as e:
-        error_msg = f'An error occurred while deleting the request: {str(e)}'
-        print(error_msg)
-        return JsonResponse({'error': error_msg}, status=500)
-
-@csrf_exempt
-def cleanup_invalid_requests(request):
-    """Admin endpoint to clean up requests with missing references"""
-    if request.session.get('user_type') != 'admin':
-        return JsonResponse({'error': 'Unauthorized'}, status=403)
-    
-    try:
-        # Find all requests with missing references
-        invalid_requests = EventRequest.objects.filter(
-            Q(sponsor__exists=False) | Q(college__exists=False)
-        )
-        
-        deleted_count = 0
-        for req in invalid_requests:
-            try:
-                # Delete associated chat messages
-                Chat.objects.filter(request=req).delete()
-                # Delete the request
-                req.delete()
-                deleted_count += 1
-            except Exception as e:
-                print(f"Error deleting invalid request {req.id}: {str(e)}")
-        
-        return JsonResponse({
-            'message': f'Successfully cleaned up {deleted_count} invalid requests'
-        })
-    except Exception as e:
-        print(f"Error in cleanup: {str(e)}")
-        return JsonResponse({'error': 'An error occurred during cleanup'}, status=500)
