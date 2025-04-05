@@ -1,0 +1,57 @@
+{% extends 'listings/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="text-center">Create New Event</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="id_event_name" class="form-label">Event Name</label>
+                            <input type="text" class="form-control" id="id_event_name" name="event_name" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_amount" class="form-label">Sponsorship Amount ($)</label>
+                            <input type="number" class="form-control" id="id_amount" name="amount" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_description" class="form-label">Event Description</label>
+                            <textarea class="form-control" id="id_description" name="description" rows="4" required></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_contact_no" class="form-label">Contact Number</label>
+                            <input type="text" class="form-control" id="id_contact_no" name="contact_no" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_location" class="form-label">Event Location</label>
+                            <input type="text" class="form-control" id="id_location" name="location" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_basic_deliverables" class="form-label">Basic Deliverables</label>
+                            <textarea class="form-control" id="id_basic_deliverables" name="basic_deliverables" rows="3" required></textarea>
+                            <div class="form-text">Enter deliverables separated by commas (e.g., Brand visibility, Social media promotion, Booth space)</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Create Event</button>
+                            <a href="{% url 'sponsor-list' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -2,6 +2,7 @@ from mongoengine import Document, EmbeddedDocument, fields
 from django.contrib.auth.models import User
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.hashers import make_password
+from datetime import datetime
 
 # Common choices
 EVENT_TYPES = (
@@ -74,27 +75,29 @@ class ClientListing(Document):
         return self.event_name
 
 class SponsorEvent(Document):
-    sponsor = fields.ReferenceField(Sponsor)
-    event_name = fields.StringField(max_length=255)
-    amount = fields.DecimalField(precision=2)
-    keywords = fields.StringField()
-    location = fields.StringField(max_length=255)
-    description = fields.StringField()
-    created_at = fields.DateTimeField()
+    sponsor = fields.ReferenceField(Sponsor, required=True)
+    sponsor_name = fields.StringField(required=True)
+    description = fields.StringField(required=True)
+    amount = fields.IntField(required=True)
+    expected_attendance = fields.StringField(required=True)
+    deliverables = fields.StringField(required=True)
+    keywords = fields.StringField(required=True)
+    created_at = fields.DateTimeField(default=datetime.now)
 
     meta = {'collection': 'sponsor_events'}
 
     def __str__(self):
-        return self.event_name
+        return self.sponsor_name
 
 class CollegeEvent(Document):
-    college = fields.ReferenceField(College)
-    event_name = fields.StringField(max_length=255)
-    amount = fields.DecimalField(precision=2)
-    description = fields.StringField()
-    contact_no = fields.StringField(max_length=15)
-    basic_deliverables = fields.StringField()
-    created_at = fields.DateTimeField()
+    college = fields.ReferenceField(College, required=True)
+    event_name = fields.StringField(required=True)
+    amount = fields.IntField(required=True)
+    description = fields.StringField(required=True)
+    contact_no = fields.StringField(required=True)
+    location = fields.StringField(required=True)
+    basic_deliverables = fields.StringField(required=True)
+    created_at = fields.DateTimeField(default=datetime.now)
 
     meta = {'collection': 'college_events'}
 

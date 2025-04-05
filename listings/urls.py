@@ -3,7 +3,7 @@ from .views import (HomeView, sponsor_list, client_list,
                    PricingView, create_sponsor, create_client,
                    login, signup, logout, get_current_user, refresh_token,
                    add_event, my_requests, my_history, profile, settings,
-                   register_interest)
+                   register_interest, create_college_event, create_sponsor_event)
 
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
@@ -25,4 +25,6 @@ urlpatterns = [
     path('profile/', profile, name='profile'),
     path('settings/', settings, name='settings'),
     path('api/events/<str:event_id>/interest/', register_interest, name='register_interest'),
+    path('create-college-event/', create_college_event, name='create-college-event'),
+    path('create-sponsor-event/', create_sponsor_event, name='create-sponsor-event'),
 ]

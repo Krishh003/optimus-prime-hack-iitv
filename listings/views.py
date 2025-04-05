@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from .models import SponsorListing, ClientListing, Sponsor, College, SponsorEvent, CollegeEvent, EventRequest, SponsorHistory, CollegeSponsorshipHistory
-from .forms import SponsorForm, ClientForm, LoginForm, SignupForm
+from .forms import SponsorForm, ClientForm, LoginForm, SignupForm, CollegeEventForm, SponsorEventForm
 from django.contrib import messages
 from django.views.generic import TemplateView
 from django.contrib.auth.hashers import make_password, check_password
@@ -38,36 +38,27 @@ def sponsor_list(request):
     
     # Format events for the template
     events = []
-    for event in college_events:
+    for event in sponsor_events:
         events.append({
-            'id': str(event.id),  # MongoEngine uses id instead of _id
-            'college_name': event.college.name if event.college else 'Unknown College',
-            'rating': event.college.avg_rating if event.college else 4.5,
+            'id': str(event.id),
+            'sponsor_name': event.sponsor_name,
+            'description': event.description,
             'amount': event.amount,
-            'deliverables': event.basic_deliverables.split(',') if event.basic_deliverables else ['Brand visibility', 'Social media promotion'],
-            'date': event.created_at,  # Using created_at as date for now
-            'location': event.college.state if event.college else 'Location not specified',
-            'expected_attendance': '1000+',  # Default value since it's not in the model
-            'description': event.description
+            'expected_attendance': event.expected_attendance,
+            'deliverables': event.deliverables,
+            'keywords': event.keywords,
+            'created_at': event.created_at
         })
     
     # Determine what to show based on user type
     user_type = request.session.get('user_type', '')
-    if user_type == 'sponsor':
-        # Show college events to sponsors
-        return render(request, 'listings/sponsor_list.html', {
-            'events': events,
-            'page_title': 'College Events Looking for Sponsors',
-            'show_college_events': True
-        })
-    else:
-        # Show sponsor events to colleges
-        return render(request, 'listings/sponsor_list.html', {
-            'sponsors': all_sponsors,
-            'sponsor_events': sponsor_events,
-            'page_title': 'Sponsors Looking for Events',
-            'show_college_events': False
-        })
+    is_authenticated = 'user_id' in request.session
+    
+    return render(request, 'listings/sponsor_list.html', {
+        'events': events,
+        'user_type': user_type,
+        'is_authenticated': is_authenticated
+    })
 
 def client_list(request):
     # Get data from both old and new models
@@ -385,3 +376,67 @@ def register_interest(request, event_id):
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)})
+
+def create_college_event(request):
+    if request.method == 'POST':
+        form = CollegeEventForm(request.POST)
+        if form.is_valid():
+            # Get the college from the current user's session
+            college_id = request.session.get('user_id')
+            try:
+                college = College.objects.get(id=college_id)
+                
+                # Create the new event
+                event = CollegeEvent(
+                    college=college,
+                    event_name=form.cleaned_data['event_name'],
+                    amount=form.cleaned_data['amount'],
+                    description=form.cleaned_data['description'],
+                    contact_no=form.cleaned_data['contact_no'],
+                    location=form.cleaned_data['location'],
+                    basic_deliverables=form.cleaned_data['basic_deliverables'],
+                    created_at=datetime.now()
+                )
+                event.save()
+                
+                messages.success(request, 'Event created successfully!')
+                return redirect('sponsor-list')
+            except College.DoesNotExist:
+                messages.error(request, 'College not found. Please log in again.')
+                return redirect('login')
+    else:
+        form = CollegeEventForm()
+    
+    return render(request, 'listings/create_college_event.html', {'form': form})
+
+def create_sponsor_event(request):
+    if request.method == 'POST':
+        form = SponsorEventForm(request.POST)
+        if form.is_valid():
+            # Get the sponsor from the current user's session
+            sponsor_id = request.session.get('user_id')
+            try:
+                sponsor = Sponsor.objects.get(id=sponsor_id)
+                
+                # Create the new event
+                event = SponsorEvent(
+                    sponsor=sponsor,
+                    sponsor_name=form.cleaned_data['sponsor_name'],
+                    description=form.cleaned_data['description'],
+                    amount=form.cleaned_data['amount'],
+                    expected_attendance=form.cleaned_data['expected_attendance'],
+                    deliverables=form.cleaned_data['deliverables'],
+                    keywords=form.cleaned_data['keywords'],
+                    created_at=datetime.now()
+                )
+                event.save()
+                
+                messages.success(request, 'Event created successfully!')
+                return redirect('sponsor-list')
+            except Sponsor.DoesNotExist:
+                messages.error(request, 'Sponsor not found. Please log in again.')
+                return redirect('login')
+    else:
+        form = SponsorEventForm()
+    
+    return render(request, 'listings/create_sponsor_event.html', {'form': form})

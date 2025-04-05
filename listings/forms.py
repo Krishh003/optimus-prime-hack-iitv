@@ -1,5 +1,6 @@
 from django import forms
 from .models import SponsorListing, ClientListing, Sponsor, College
+from listings.models import CollegeEvent
 
 class SponsorForm(forms.Form):
     name = forms.CharField(max_length=100)
@@ -36,3 +37,31 @@ class SignupForm(forms.Form):
         if password and confirm_password and password != confirm_password:
             raise forms.ValidationError("Passwords do not match")
         return cleaned_data
+
+class CollegeEventForm(forms.Form):
+    event_name = forms.CharField(max_length=200, required=True)
+    amount = forms.IntegerField(required=True)
+    description = forms.CharField(widget=forms.Textarea, required=True)
+    contact_no = forms.CharField(max_length=15, required=True)
+    location = forms.CharField(max_length=200, required=True)
+    basic_deliverables = forms.CharField(
+        widget=forms.Textarea,
+        required=True,
+        help_text="Enter deliverables separated by commas"
+    )
+
+class SponsorEventForm(forms.Form):
+    sponsor_name = forms.CharField(max_length=255, required=True)
+    description = forms.CharField(widget=forms.Textarea, required=True)
+    amount = forms.IntegerField(required=True)
+    expected_attendance = forms.CharField(max_length=100, required=True)
+    deliverables = forms.CharField(
+        widget=forms.Textarea,
+        required=True,
+        help_text="Enter deliverables separated by commas"
+    )
+    keywords = forms.CharField(
+        widget=forms.Textarea,
+        required=True,
+        help_text="Enter keywords separated by commas (e.g., Technology, Innovation, Networking)"
+    )
