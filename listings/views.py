@@ -31,6 +31,30 @@ def create_sponsor(request):
         form = SponsorForm()
     return render(request, 'listings/create_sponsor.html', {'form': form})
 
+def register_sponsor(request):
+    if request.method == 'POST':
+        form = SponsorForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, 'Registration successful!')
+            return redirect('sponsor_dashboard')
+    else:
+        form = SponsorForm()
+    return render(request, 'listings/register_sponsor.html', {'form': form})
+
+def register_college(request):
+    if request.method == 'POST':
+        form = CollegeForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, 'Registration successful!')
+            return redirect('college_dashboard')
+    else:
+        form = CollegeForm()
+    return render(request, 'listings/register_college.html', {'form': form})
+
 def create_client(request):
     if request.method == 'POST':
         form = ClientForm(request.POST)
