@@ -46,43 +46,42 @@
     <h2 class="text-center mb-4">Available Sponsorship Opportunities</h2>
 
     <div class="row">
-        <!-- Static Dummy Data Cards -->
+        {% for event in events %}
         <div class="col-md-6 col-lg-4 mb-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-header bg-white">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">IIT Bombay</h5>
+                        <h5 class="mb-0">{{ event.college_name }}</h5>
                         <div class="rating">
                             <i class="fas fa-star text-warning"></i>
-                            <span>4.8/5.0</span>
+                            <span>{{ event.rating }}/5.0</span>
                         </div>
                     </div>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
                         <h6 class="text-primary">Sponsorship Amount</h6>
-                        <h3 class="mb-0">₹500,000</h3>
+                        <h3 class="mb-0">₹{{ event.amount|intcomma }}</h3>
                     </div>
 
                     <div class="mb-3">
                         <h6 class="text-primary">Deliverables</h6>
                         <ul class="list-unstyled">
-                            <li><i class="fas fa-check text-success me-2"></i>Logo on event website</li>
-                            <li><i class="fas fa-check text-success me-2"></i>Banner at venue</li>
-                            <li><i class="fas fa-check text-success me-2"></i>Social media mentions</li>
-                            <li><i class="fas fa-check text-success me-2"></i>Product placement</li>
+                            {% for deliverable in event.deliverables %}
+                            <li><i class="fas fa-check text-success me-2"></i>{{ deliverable }}</li>
+                            {% endfor %}
                         </ul>
                     </div>
 
                     <div class="mb-3">
                         <h6 class="text-primary">Event Details</h6>
-                        <p class="mb-1"><i class="fas fa-calendar me-2"></i>October 15-17, 2024</p>
-                        <p class="mb-1"><i class="fas fa-map-marker-alt me-2"></i>Mumbai, Maharashtra</p>
-                        <p class="mb-0"><i class="fas fa-users me-2"></i>Expected Attendance: 5,000</p>
+                        <p class="mb-1"><i class="fas fa-calendar me-2"></i>{{ event.date }}</p>
+                        <p class="mb-1"><i class="fas fa-map-marker-alt me-2"></i>{{ event.location }}</p>
+                        <p class="mb-0"><i class="fas fa-users me-2"></i>Expected Attendance: {{ event.expected_attendance }}</p>
                     </div>
                 </div>
                 <div class="card-footer bg-white border-top-0">
-                    <button class="btn btn-primary w-100" onclick="showInterest('dummy1')">
+                    <button class="btn btn-primary w-100" onclick="showInterest('{{ event.id }}')">
                         <i class="fas fa-handshake me-2"></i>I'm Interested
                     </button>
                     <p class="text-muted small text-center mt-2 mb-0">
@@ -91,230 +90,13 @@
                 </div>
             </div>
         </div>
-
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-header bg-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">IIM Ahmedabad</h5>
-                        <div class="rating">
-                            <i class="fas fa-star text-warning"></i>
-                            <span>4.9/5.0</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <h6 class="text-primary">Sponsorship Amount</h6>
-                        <h3 class="mb-0">₹750,000</h3>
-                    </div>
-
-                    <div class="mb-3">
-                        <h6 class="text-primary">Deliverables</h6>
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-check text-success me-2"></i>Premium booth at event</li>
-                            <li><i class="fas fa-check text-success me-2"></i>Speaking opportunity</li>
-                            <li><i class="fas fa-check text-success me-2"></i>Branded merchandise</li>
-                            <li><i class="fas fa-check text-success me-2"></i>Student engagement program</li>
-                        </ul>
-                    </div>
-
-                    <div class="mb-3">
-                        <h6 class="text-primary">Event Details</h6>
-                        <p class="mb-1"><i class="fas fa-calendar me-2"></i>November 5-7, 2024</p>
-                        <p class="mb-1"><i class="fas fa-map-marker-alt me-2"></i>Ahmedabad, Gujarat</p>
-                        <p class="mb-0"><i class="fas fa-users me-2"></i>Expected Attendance: 3,500</p>
-                    </div>
-                </div>
-                <div class="card-footer bg-white border-top-0">
-                    <button class="btn btn-primary w-100" onclick="showInterest('dummy2')">
-                        <i class="fas fa-handshake me-2"></i>I'm Interested
-                    </button>
-                    <p class="text-muted small text-center mt-2 mb-0">
-                        <i class="fas fa-info-circle me-1"></i>All deliverables are negotiable
-                    </p>
-                </div>
+        {% empty %}
+        <div class="col-12 text-center">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>No sponsorship opportunities available at the moment.
             </div>
         </div>
-
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-header bg-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">BITS Pilani</h5>
-                        <div class="rating">
-                            <i class="fas fa-star text-warning"></i>
-                            <span>4.7/5.0</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <h6 class="text-primary">Sponsorship Amount</h6>
-                        <h3 class="mb-0">₹300,000</h3>
-                    </div>
-
-                    <div class="mb-3">
-                        <h6 class="text-primary">Deliverables</h6>
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-check text-success me-2"></i>Logo on event materials</li>
-                            <li><i class="fas fa-check text-success me-2"></i>Social media campaign</li>
-                            <li><i class="fas fa-check text-success me-2"></i>Student internship opportunities</li>
-                        </ul>
-                    </div>
-
-                    <div class="mb-3">
-                        <h6 class="text-primary">Event Details</h6>
-                        <p class="mb-1"><i class="fas fa-calendar me-2"></i>December 10-12, 2024</p>
-                        <p class="mb-1"><i class="fas fa-map-marker-alt me-2"></i>Pilani, Rajasthan</p>
-                        <p class="mb-0"><i class="fas fa-users me-2"></i>Expected Attendance: 2,800</p>
-                    </div>
-                </div>
-                <div class="card-footer bg-white border-top-0">
-                    <button class="btn btn-primary w-100" onclick="showInterest('dummy3')">
-                        <i class="fas fa-handshake me-2"></i>I'm Interested
-                    </button>
-                    <p class="text-muted small text-center mt-2 mb-0">
-                        <i class="fas fa-info-circle me-1"></i>All deliverables are negotiable
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-header bg-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">NIT Trichy</h5>
-                        <div class="rating">
-                            <i class="fas fa-star text-warning"></i>
-                            <span>4.6/5.0</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <h6 class="text-primary">Sponsorship Amount</h6>
-                        <h3 class="mb-0">₹400,000</h3>
-                    </div>
-
-                    <div class="mb-3">
-                        <h6 class="text-primary">Deliverables</h6>
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-check text-success me-2"></i>Exclusive sponsorship rights</li>
-                            <li><i class="fas fa-check text-success me-2"></i>Product demonstration area</li>
-                            <li><i class="fas fa-check text-success me-2"></i>Student ambassador program</li>
-                            <li><i class="fas fa-check text-success me-2"></i>Recruitment opportunity</li>
-                        </ul>
-                    </div>
-
-                    <div class="mb-3">
-                        <h6 class="text-primary">Event Details</h6>
-                        <p class="mb-1"><i class="fas fa-calendar me-2"></i>January 15-17, 2025</p>
-                        <p class="mb-1"><i class="fas fa-map-marker-alt me-2"></i>Tiruchirappalli, Tamil Nadu</p>
-                        <p class="mb-0"><i class="fas fa-users me-2"></i>Expected Attendance: 4,200</p>
-                    </div>
-                </div>
-                <div class="card-footer bg-white border-top-0">
-                    <button class="btn btn-primary w-100" onclick="showInterest('dummy4')">
-                        <i class="fas fa-handshake me-2"></i>I'm Interested
-                    </button>
-                    <p class="text-muted small text-center mt-2 mb-0">
-                        <i class="fas fa-info-circle me-1"></i>All deliverables are negotiable
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-header bg-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">DTU Delhi</h5>
-                        <div class="rating">
-                            <i class="fas fa-star text-warning"></i>
-                            <span>4.5/5.0</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <h6 class="text-primary">Sponsorship Amount</h6>
-                        <h3 class="mb-0">₹600,000</h3>
-                    </div>
-
-                    <div class="mb-3">
-                        <h6 class="text-primary">Deliverables</h6>
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-check text-success me-2"></i>Title sponsorship</li>
-                            <li><i class="fas fa-check text-success me-2"></i>VIP access to all events</li>
-                            <li><i class="fas fa-check text-success me-2"></i>Workshop hosting rights</li>
-                            <li><i class="fas fa-check text-success me-2"></i>Exclusive networking session</li>
-                        </ul>
-                    </div>
-
-                    <div class="mb-3">
-                        <h6 class="text-primary">Event Details</h6>
-                        <p class="mb-1"><i class="fas fa-calendar me-2"></i>February 20-22, 2025</p>
-                        <p class="mb-1"><i class="fas fa-map-marker-alt me-2"></i>New Delhi</p>
-                        <p class="mb-0"><i class="fas fa-users me-2"></i>Expected Attendance: 6,000</p>
-                    </div>
-                </div>
-                <div class="card-footer bg-white border-top-0">
-                    <button class="btn btn-primary w-100" onclick="showInterest('dummy5')">
-                        <i class="fas fa-handshake me-2"></i>I'm Interested
-                    </button>
-                    <p class="text-muted small text-center mt-2 mb-0">
-                        <i class="fas fa-info-circle me-1"></i>All deliverables are negotiable
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-header bg-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">VIT Vellore</h5>
-                        <div class="rating">
-                            <i class="fas fa-star text-warning"></i>
-                            <span>4.4/5.0</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <h6 class="text-primary">Sponsorship Amount</h6>
-                        <h3 class="mb-0">₹450,000</h3>
-                    </div>
-
-                    <div class="mb-3">
-                        <h6 class="text-primary">Deliverables</h6>
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-check text-success me-2"></i>Branded experience zone</li>
-                            <li><i class="fas fa-check text-success me-2"></i>Interactive product showcase</li>
-                            <li><i class="fas fa-check text-success me-2"></i>Student engagement activities</li>
-                            <li><i class="fas fa-check text-success me-2"></i>Social media campaign</li>
-                        </ul>
-                    </div>
-
-                    <div class="mb-3">
-                        <h6 class="text-primary">Event Details</h6>
-                        <p class="mb-1"><i class="fas fa-calendar me-2"></i>March 10-12, 2025</p>
-                        <p class="mb-1"><i class="fas fa-map-marker-alt me-2"></i>Vellore, Tamil Nadu</p>
-                        <p class="mb-0"><i class="fas fa-users me-2"></i>Expected Attendance: 5,500</p>
-                    </div>
-                </div>
-                <div class="card-footer bg-white border-top-0">
-                    <button class="btn btn-primary w-100" onclick="showInterest('dummy6')">
-                        <i class="fas fa-handshake me-2"></i>I'm Interested
-                    </button>
-                    <p class="text-muted small text-center mt-2 mb-0">
-                        <i class="fas fa-info-circle me-1"></i>All deliverables are negotiable
-                    </p>
-                </div>
-            </div>
-        </div>
+        {% endfor %}
     </div>
 </div>
 

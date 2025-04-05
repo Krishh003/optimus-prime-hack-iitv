@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.hashers import make_password
+from djongo import models as djongo_models
 
 # Common choices
 EVENT_TYPES = (
@@ -16,7 +17,7 @@ STATUS_CHOICES = (
 )
 
 class Sponsor(models.Model):
-    sponsor_id = models.AutoField(primary_key=True)
+    _id = djongo_models.ObjectIdField()
     name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     contact_no = models.CharField(max_length=15)
@@ -27,13 +28,13 @@ class Sponsor(models.Model):
     state = models.CharField(max_length=100, default='Not Specified')
 
     class Meta:
-        db_table = 'sponsors'  # Specify the exact table name
+        db_table = 'sponsors'  # Specify the exact collection name
 
     def __str__(self):
         return self.name
 
 class College(models.Model):
-    college_id = models.AutoField(primary_key=True)
+    _id = djongo_models.ObjectIdField()
     name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     contact_no = models.CharField(max_length=15)
@@ -44,12 +45,13 @@ class College(models.Model):
     address = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
-        db_table = 'colleges'  # Specify the exact table name
+        db_table = 'colleges'  # Specify the exact collection name
 
     def __str__(self):
         return self.name
 
 class SponsorListing(models.Model):
+    _id = djongo_models.ObjectIdField()
     user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
     name = models.CharField(max_length=100)
     description = models.TextField()
@@ -62,6 +64,7 @@ class SponsorListing(models.Model):
         return self.name
 
 class ClientListing(models.Model):
+    _id = djongo_models.ObjectIdField()
     user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
     event_name = models.CharField(max_length=100)
     description = models.TextField()
@@ -74,9 +77,7 @@ class ClientListing(models.Model):
         return self.event_name
 
 class SponsorEvent(models.Model):
-    class Meta:
-        db_table = 'sponsor_events'
-
+    _id = djongo_models.ObjectIdField()
     sponsor = models.ForeignKey(Sponsor, on_delete=models.CASCADE)
     event_name = models.CharField(max_length=255)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -85,13 +86,14 @@ class SponsorEvent(models.Model):
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        db_table = 'sponsor_events'
+
     def __str__(self):
         return self.event_name
 
 class CollegeEvent(models.Model):
-    class Meta:
-        db_table = 'college_events'
-
+    _id = djongo_models.ObjectIdField()
     college = models.ForeignKey(College, on_delete=models.CASCADE)
     event_name = models.CharField(max_length=255)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -100,10 +102,14 @@ class CollegeEvent(models.Model):
     basic_deliverables = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        db_table = 'college_events'
+
     def __str__(self):
         return self.event_name
 
 class EventRequest(models.Model):
+    _id = djongo_models.ObjectIdField()
     sponsor = models.ForeignKey(Sponsor, on_delete=models.CASCADE)
     college = models.ForeignKey(College, on_delete=models.CASCADE)
     event_id = models.IntegerField()
@@ -117,6 +123,7 @@ class EventRequest(models.Model):
         return f"{self.sponsor.name} - {self.college.name} - {self.event_id}"
 
 class SponsorHistory(models.Model):
+    _id = djongo_models.ObjectIdField()
     sponsor = models.ForeignKey(Sponsor, on_delete=models.CASCADE)
     college = models.ForeignKey(College, on_delete=models.CASCADE)
     event_id = models.IntegerField()
@@ -128,6 +135,7 @@ class SponsorHistory(models.Model):
         return f"{self.sponsor.name} - {self.college.name} - {self.event_id}"
 
 class CollegeSponsorshipHistory(models.Model):
+    _id = djongo_models.ObjectIdField()
     college = models.ForeignKey(College, on_delete=models.CASCADE)
     sponsor = models.ForeignKey(Sponsor, on_delete=models.CASCADE)
     event_id = models.IntegerField()

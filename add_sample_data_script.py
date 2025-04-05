@@ -3,6 +3,9 @@ import os
 import django
 import random
 from decimal import Decimal
+from datetime import datetime, timedelta
+from django.contrib.auth.hashers import make_password
+from django.db import connection
 
 # Set up Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sponsorship_site.settings')
@@ -11,276 +14,147 @@ django.setup()
 # Import models after Django setup
 from listings.models import Sponsor, College, SponsorEvent, CollegeEvent, EventRequest, SponsorHistory, CollegeSponsorshipHistory
 
-def add_sample_data():
-    print("Adding sample data...")
-    
-    # Clear existing data
-    print("Clearing existing data...")
-    SponsorHistory.objects.all().delete()
-    CollegeSponsorshipHistory.objects.all().delete()
-    EventRequest.objects.all().delete()
-    CollegeEvent.objects.all().delete()
-    SponsorEvent.objects.all().delete()
-    College.objects.all().delete()
-    Sponsor.objects.all().delete()
-    
-    # Create sample sponsors
-    sponsors = []
-    sponsor_data = [
-        {
-            'name': 'TechCorp Inc.',
-            'email': 'sponsor1@techcorp.com',
-            'contact_no': '+1-555-123-4567',
-            'avg_rating': 4.5,
-            'password': 'password123'
-        },
-        {
-            'name': 'Global Finance',
-            'email': 'sponsor2@globalfinance.com',
-            'contact_no': '+1-555-234-5678',
-            'avg_rating': 4.2,
-            'password': 'password123'
-        },
-        {
-            'name': 'EcoSolutions',
-            'email': 'sponsor3@ecosolutions.com',
-            'contact_no': '+1-555-345-6789',
-            'avg_rating': 4.8,
-            'password': 'password123'
-        },
-        {
-            'name': 'InnovateTech',
-            'email': 'sponsor4@innovatetech.com',
-            'contact_no': '+1-555-456-7890',
-            'avg_rating': 4.0,
-            'password': 'password123'
-        },
-        {
-            'name': 'HealthCare Plus',
-            'email': 'sponsor5@healthcareplus.com',
-            'contact_no': '+1-555-567-8901',
-            'avg_rating': 4.7,
-            'password': 'password123'
-        }
-    ]
-    
-    for data in sponsor_data:
-        sponsor = Sponsor.objects.create(**data)
-        sponsors.append(sponsor)
-        print(f'Created sponsor: {sponsor.name}')
-    
-    # Create sample colleges
-    colleges = []
-    college_data = [
-        {
-            'name': 'State University',
-            'email': 'college1@stateuniv.edu',
-            'contact_no': '+1-555-678-9012',
-            'avg_rating': 4.3,
-            'state': 'California',
-            'password': 'password123'
-        },
-        {
-            'name': 'Tech Institute',
-            'email': 'college2@techinst.edu',
-            'contact_no': '+1-555-789-0123',
-            'avg_rating': 4.6,
-            'state': 'Massachusetts',
-            'password': 'password123'
-        },
-        {
-            'name': 'Liberal Arts College',
-            'email': 'college3@libarts.edu',
-            'contact_no': '+1-555-890-1234',
-            'avg_rating': 4.1,
-            'state': 'New York',
-            'password': 'password123'
-        },
-        {
-            'name': 'Community College',
-            'email': 'college4@commcollege.edu',
-            'contact_no': '+1-555-901-2345',
-            'avg_rating': 3.9,
-            'state': 'Texas',
-            'password': 'password123'
-        },
-        {
-            'name': 'Medical University',
-            'email': 'college5@meduniv.edu',
-            'contact_no': '+1-555-012-3456',
-            'avg_rating': 4.7,
-            'state': 'Illinois',
-            'password': 'password123'
-        }
-    ]
-    
-    for data in college_data:
-        college = College.objects.create(**data)
-        colleges.append(college)
-        print(f'Created college: {college.name}')
-    
-    # Create sample sponsor events
-    sponsor_events = []
-    sponsor_event_data = [
-        {
-            'sponsor': sponsors[0],
-            'event_name': 'Tech Conference 2024',
-            'amount': Decimal('5000.00'),
-            'keywords': 'technology, innovation, conference',
-            'location': 'San Francisco, CA',
-            'description': 'Annual technology conference featuring the latest innovations.'
-        },
-        {
-            'sponsor': sponsors[1],
-            'event_name': 'Finance Summit',
-            'amount': Decimal('7500.00'),
-            'keywords': 'finance, business, summit',
-            'location': 'New York, NY',
-            'description': 'Summit bringing together financial experts and industry leaders.'
-        },
-        {
-            'sponsor': sponsors[2],
-            'event_name': 'Green Energy Expo',
-            'amount': Decimal('3000.00'),
-            'keywords': 'environment, energy, expo',
-            'location': 'Portland, OR',
-            'description': 'Exhibition showcasing sustainable energy solutions.'
-        },
-        {
-            'sponsor': sponsors[3],
-            'event_name': 'Innovation Hackathon',
-            'amount': Decimal('4000.00'),
-            'keywords': 'hackathon, innovation, technology',
-            'location': 'Boston, MA',
-            'description': '48-hour hackathon focused on solving real-world problems.'
-        },
-        {
-            'sponsor': sponsors[4],
-            'event_name': 'Healthcare Symposium',
-            'amount': Decimal('6000.00'),
-            'keywords': 'healthcare, medical, symposium',
-            'location': 'Chicago, IL',
-            'description': 'Symposium on the future of healthcare technology.'
-        }
-    ]
-    
-    for data in sponsor_event_data:
-        event = SponsorEvent.objects.create(**data)
+# Clear existing data
+Sponsor.objects.all().delete()
+College.objects.all().delete()
+SponsorEvent.objects.all().delete()
+CollegeEvent.objects.all().delete()
+EventRequest.objects.all().delete()
+SponsorHistory.objects.all().delete()
+CollegeSponsorshipHistory.objects.all().delete()
+
+# Create sample sponsors
+sponsors = []
+for i in range(10):
+    sponsor = Sponsor.objects.create(
+        name=f'Sponsor {i+1}',
+        email=f'sponsor{i+1}@example.com',
+        contact_no=f'9876543{i:03d}',
+        avg_rating=Decimal(random.uniform(3.5, 5.0)).quantize(Decimal('0.01')),
+        password=make_password('password123'),
+        address=f'Address {i+1}, City {i+1}',
+        state=f'State {i+1}'
+    )
+    sponsors.append(sponsor)
+    print(f'Created sponsor: {sponsor.name}')
+
+# Create sample colleges
+colleges = []
+for i in range(10):
+    college = College.objects.create(
+        name=f'College {i+1}',
+        email=f'college{i+1}@example.com',
+        contact_no=f'9876543{i+10:03d}',
+        avg_rating=Decimal(random.uniform(3.5, 5.0)).quantize(Decimal('0.01')),
+        state=f'State {i+1}',
+        password=make_password('password123'),
+        address=f'Address {i+1}, City {i+1}'
+    )
+    colleges.append(college)
+    print(f'Created college: {college.name}')
+
+# Create sample sponsor events
+sponsor_events = []
+for sponsor in sponsors:
+    for i in range(3):
+        event = SponsorEvent.objects.create(
+            sponsor=sponsor,
+            event_name=f'Sponsor Event {i+1} by {sponsor.name}',
+            amount=Decimal(random.randint(10000, 50000)),
+            keywords=f'keyword1, keyword2, keyword3',
+            location=f'Location {i+1}',
+            description=f'Description for event {i+1} by {sponsor.name}'
+        )
         sponsor_events.append(event)
         print(f'Created sponsor event: {event.event_name}')
-    
-    # Create sample college events
-    college_events = []
-    college_event_data = [
-        {
-            'college': colleges[0],
-            'event_name': 'Campus Tech Fair',
-            'amount': Decimal('3000.00'),
-            'description': 'Annual technology fair showcasing student projects.',
-            'contact_no': '+1-555-111-2222',
-            'basic_deliverables': 'Booth space, promotional materials, refreshments'
-        },
-        {
-            'college': colleges[1],
-            'event_name': 'Engineering Symposium',
-            'amount': Decimal('4500.00'),
-            'description': 'Symposium featuring engineering innovations and research.',
-            'contact_no': '+1-555-222-3333',
-            'basic_deliverables': 'Presentation space, technical equipment, lunch for attendees'
-        },
-        {
-            'college': colleges[2],
-            'event_name': 'Arts Festival',
-            'amount': Decimal('2000.00'),
-            'description': 'Annual arts festival showcasing student creativity.',
-            'contact_no': '+1-555-333-4444',
-            'basic_deliverables': 'Exhibition space, materials, refreshments'
-        },
-        {
-            'college': colleges[3],
-            'event_name': 'Community Outreach Day',
-            'amount': Decimal('1500.00'),
-            'description': 'Day of community service and engagement.',
-            'contact_no': '+1-555-444-5555',
-            'basic_deliverables': 'T-shirts, supplies, lunch for volunteers'
-        },
-        {
-            'college': colleges[4],
-            'event_name': 'Medical Research Conference',
-            'amount': Decimal('5000.00'),
-            'description': 'Conference presenting medical research findings.',
-            'contact_no': '+1-555-555-6666',
-            'basic_deliverables': 'Conference room, presentation equipment, refreshments'
-        }
-    ]
-    
-    for data in college_event_data:
-        event = CollegeEvent.objects.create(**data)
-        college_events.append(event)
-        print(f'Created college event: {event.event_name}')
-    
-    # Create sample event requests
-    event_requests = []
-    for i in range(10):
-        sponsor = random.choice(sponsors)
-        college = random.choice(colleges)
-        event_type = random.choice(['sponsor_event', 'college_event'])
-        
-        if event_type == 'sponsor_event':
-            event_id = random.choice(sponsor_events).id
-        else:
-            event_id = random.choice(college_events).id
-            
-        status = random.choice(['pending', 'accepted', 'rejected'])
-        price = Decimal(random.randint(1000, 5000))
-        
-        request = EventRequest.objects.create(
-            sponsor=sponsor,
+
+# Create sample college events
+college_events = []
+for college in colleges:
+    for i in range(3):
+        event = CollegeEvent.objects.create(
             college=college,
-            event_id=event_id,
-            event_type=event_type,
-            status=status,
-            price=price,
+            event_name=f'College Event {i+1} by {college.name}',
+            amount=Decimal(random.randint(50000, 200000)),
+            description=f'Description for event {i+1} by {college.name}',
+            contact_no=f'9876543{i+20:03d}',
             basic_deliverables='Logo placement, social media mentions, booth space'
         )
-        event_requests.append(request)
-        print(f'Created event request: {sponsor.name} - {college.name}')
+        college_events.append(event)
+        print(f'Created college event: {event.event_name}')
+
+# Create sample event requests
+event_requests = []
+for _ in range(20):
+    sponsor = random.choice(sponsors)
+    college = random.choice(colleges)
+    event_type = random.choice(['sponsor_event', 'college_event'])
     
-    # Create sample sponsor history
-    for i in range(5):
-        sponsor = random.choice(sponsors)
-        college = random.choice(colleges)
-        event_type = random.choice(['sponsor_event', 'college_event'])
-        event_id = random.randint(1, 5)
-        amount = Decimal(random.randint(1000, 5000))
+    if event_type == 'sponsor_event':
+        event_id = random.choice(sponsor_events).id
+    else:
+        event_id = random.choice(college_events).id
         
-        history = SponsorHistory.objects.create(
-            sponsor=sponsor,
-            college=college,
-            event_id=event_id,
-            event_type=event_type,
-            amount=amount
-        )
-        print(f'Created sponsor history: {sponsor.name} - {college.name}')
+    status = random.choice(['pending', 'accepted', 'rejected'])
+    price = Decimal(random.randint(1000, 5000))
     
-    # Create sample college sponsorship history
-    for i in range(5):
-        college = random.choice(colleges)
-        sponsor = random.choice(sponsors)
-        event_type = random.choice(['sponsor_event', 'college_event'])
-        event_id = random.randint(1, 5)
-        amount = Decimal(random.randint(1000, 5000))
+    request = EventRequest.objects.create(
+        sponsor=sponsor,
+        college=college,
+        event_id=event_id,
+        event_type=event_type,
+        status=status,
+        price=price,
+        basic_deliverables="Basic deliverables for the event"
+    )
+    event_requests.append(request)
+    print(f'Created event request: {sponsor.name} - {college.name}')
+
+# Create sample sponsor history
+for _ in range(30):
+    sponsor = random.choice(sponsors)
+    college = random.choice(colleges)
+    event_type = random.choice(['sponsor_event', 'college_event'])
+    
+    if event_type == 'sponsor_event':
+        event_id = random.choice(sponsor_events).id
+    else:
+        event_id = random.choice(college_events).id
         
-        history = CollegeSponsorshipHistory.objects.create(
-            college=college,
-            sponsor=sponsor,
-            event_id=event_id,
-            event_type=event_type,
-            amount=amount
-        )
-        print(f'Created college sponsorship history: {college.name} - {sponsor.name}')
+    amount = Decimal(random.randint(1000, 5000))
     
-    print('Successfully added sample data')
+    history = SponsorHistory.objects.create(
+        sponsor=sponsor,
+        college=college,
+        event_id=event_id,
+        event_type=event_type,
+        amount=amount
+    )
+    print(f'Created sponsor history: {sponsor.name} - {college.name}')
+
+# Create sample college sponsorship history
+for _ in range(30):
+    college = random.choice(colleges)
+    sponsor = random.choice(sponsors)
+    event_type = random.choice(['sponsor_event', 'college_event'])
+    
+    if event_type == 'sponsor_event':
+        event_id = random.choice(sponsor_events).id
+    else:
+        event_id = random.choice(college_events).id
+        
+    amount = Decimal(random.randint(1000, 5000))
+    
+    history = CollegeSponsorshipHistory.objects.create(
+        college=college,
+        sponsor=sponsor,
+        event_id=event_id,
+        event_type=event_type,
+        amount=amount
+    )
+    print(f'Created college sponsorship history: {college.name} - {sponsor.name}')
+
+print('Sample data creation completed!')
 
 if __name__ == '__main__':
     add_sample_data() 

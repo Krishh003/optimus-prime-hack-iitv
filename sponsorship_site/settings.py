@@ -81,12 +81,12 @@ WSGI_APPLICATION = 'sponsorship_site.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': 'djongo',
         'NAME': 'sponsorship_db',
-        'USER': 'root',
-        'PASSWORD': 'cidco@kharghar',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'CLIENT': {
+            'host': 'localhost',
+            'port': 27017,
+        }
     }
 }
 
