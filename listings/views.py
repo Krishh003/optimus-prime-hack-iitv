@@ -90,6 +90,10 @@ def client_list(request):
     })
 
 def create_sponsor(request):
+    # Check if user is already logged in as a sponsor
+    if request.session.get('user_id') and request.session.get('user_type') == 'sponsor':
+        return redirect('sponsor-list')
+        
     if request.method == 'POST':
         form = SponsorForm(request.POST)
         if form.is_valid():
@@ -110,6 +114,10 @@ def create_sponsor(request):
     return render(request, 'listings/create_sponsor.html', {'form': form})
 
 def create_client(request):
+    # Check if user is already logged in as a college
+    if request.session.get('user_id') and request.session.get('user_type') == 'college':
+        return redirect('client-list')
+        
     if request.method == 'POST':
         form = ClientForm(request.POST)
         if form.is_valid():
@@ -176,13 +184,13 @@ def login(request):
                         request.session['refresh_token'] = str(refresh)
 
                         messages.success(request, 'Successfully logged in as sponsor!')
-                        return redirect('sponsor-list')
+                        return redirect('sponsor-list')  # Redirect to sponsor list after login
                     else:
                         messages.error(request, 'Invalid password')
                 except Sponsor.DoesNotExist:
                     messages.error(request, 'Sponsor account not found')
                 return redirect('login')
-            else:
+            else:  # College user
                 try:
                     user = College.objects.get(email=email)
                     if check_password(password, user.password):
@@ -203,7 +211,7 @@ def login(request):
                         request.session['refresh_token'] = str(refresh)
 
                         messages.success(request, 'Successfully logged in as college!')
-                        return redirect('sponsor-list')
+                        return redirect('client-list')  # Redirect to client list after login
                     else:
                         messages.error(request, 'Invalid password')
                 except College.DoesNotExist:
@@ -291,6 +299,18 @@ class PricingView(TemplateView):
 
 class HomeView(TemplateView):
     template_name = 'listings/home.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Check if user is logged in
+        if 'user_id' in request.session:
+            user_type = request.session.get('user_type')
+            if user_type == 'sponsor':
+                return redirect('sponsor-list')
+            elif user_type == 'college':
+                return redirect('client-list')
+            elif user_type == 'admin':
+                return redirect('admin-dashboard')
+        return super().dispatch(request, *args, **kwargs)
 
 def add_event(request):
     if 'user_id' not in request.session:
@@ -351,6 +371,10 @@ def my_requests(request):
         processed_requests = []
         for req in requests_list:
             try:
+                # Skip rejected requests
+                if req.status == 'rejected':
+                    continue
+                    
                 # Skip if event_id is not a valid ObjectId
                 if not req.event_id or len(req.event_id) != 24:
                     print(f"Skipping request {req.id} - Invalid event_id format: {req.event_id}")
@@ -359,38 +383,71 @@ def my_requests(request):
                 # Get event details based on event type
                 event_name = "Event no longer available"
                 event_exists = True
+                event_creator_id = None
                 
                 if req.event_type == 'sponsor_event':
                     try:
                         event = SponsorEvent.objects.get(id=req.event_id)
                         event_name = event.sponsor_name
+                        event_creator_id = str(event.sponsor.id)
                     except SponsorEvent.DoesNotExist:
                         print(f"SponsorEvent not found for id: {req.event_id} (Request ID: {req.id})")
                         event_exists = False
+                        continue  # Skip this request if event doesn't exist
                 else:
                     try:
                         event = CollegeEvent.objects.get(id=req.event_id)
                         event_name = event.event_name
+                        event_creator_id = str(event.college.id)
                     except CollegeEvent.DoesNotExist:
                         print(f"CollegeEvent not found for id: {req.event_id} (Request ID: {req.id})")
                         event_exists = False
+                        continue  # Skip this request if event doesn't exist
                 
                 # Get college/sponsor details
                 try:
                     if user_type == 'sponsor':
-                        college = College.objects.get(id=req.college.id) if req.college else None
-                        other_party = {
-                            'id': str(college.id) if college else None,
-                            'name': college.name if college else 'Unknown College',
-                            'email': college.email if college else 'N/A'
-                        }
+                        if req.college:
+                            try:
+                                college = College.objects.get(id=req.college.id)
+                                other_party = {
+                                    'id': str(college.id),
+                                    'name': college.name,
+                                    'email': college.email
+                                }
+                            except College.DoesNotExist:
+                                other_party = {
+                                    'id': None,
+                                    'name': 'Unknown College',
+                                    'email': 'N/A'
+                                }
+                        else:
+                            other_party = {
+                                'id': None,
+                                'name': 'Unknown College',
+                                'email': 'N/A'
+                            }
                     else:
-                        sponsor = Sponsor.objects.get(id=req.sponsor.id) if req.sponsor else None
-                        other_party = {
-                            'id': str(sponsor.id) if sponsor else None,
-                            'name': sponsor.name if sponsor else 'Unknown Sponsor',
-                            'email': sponsor.email if sponsor else 'N/A'
-                        }
+                        if req.sponsor:
+                            try:
+                                sponsor = Sponsor.objects.get(id=req.sponsor.id)
+                                other_party = {
+                                    'id': str(sponsor.id),
+                                    'name': sponsor.name,
+                                    'email': sponsor.email
+                                }
+                            except Sponsor.DoesNotExist:
+                                other_party = {
+                                    'id': None,
+                                    'name': 'Unknown Sponsor',
+                                    'email': 'N/A'
+                                }
+                        else:
+                            other_party = {
+                                'id': None,
+                                'name': 'Unknown Sponsor',
+                                'email': 'N/A'
+                            }
                 except Exception as e:
                     print(f"Error getting other party details: {str(e)}")
                     other_party = {
@@ -405,10 +462,16 @@ def my_requests(request):
                     'event_name': event_name,
                     'event_type': req.event_type,
                     'status': req.status,
+                    'status_color': {
+                        'pending': 'warning',
+                        'accepted': 'success',
+                        'rejected': 'danger'
+                    }.get(req.status, 'secondary'),
                     'price': req.price,
                     'created_at': req.created_at,
                     'other_party': other_party,
-                    'event_exists': event_exists
+                    'event_exists': event_exists,
+                    'event_creator_id': event_creator_id
                 })
             except Exception as e:
                 print(f"Error processing request {req.id}: {str(e)}")
@@ -574,7 +637,7 @@ def create_sponsor_event(request):
                 event.save()
                 
                 messages.success(request, 'Event created successfully!')
-                return redirect('sponsor-list')
+                return redirect('client-list')
             except Sponsor.DoesNotExist:
                 messages.error(request, 'Sponsor not found. Please log in again.')
                 return redirect('login')
@@ -791,14 +854,12 @@ def request_details(request, request_id):
 @csrf_exempt
 def accept_request(request, request_id):
     if 'user_id' not in request.session:
-        messages.error(request, 'Please login first')
-        return redirect('login')
+        return JsonResponse({'error': 'Please login first'}, status=401)
     
     try:
         # Validate request_id format
         if not request_id or len(request_id) != 24:
-            messages.error(request, 'Invalid request ID')
-            return redirect('my_requests')
+            return JsonResponse({'error': 'Invalid request ID'}, status=400)
             
         event_request = EventRequest.objects.get(id=ObjectId(request_id))
         user_id = request.session['user_id']
@@ -806,13 +867,21 @@ def accept_request(request, request_id):
         
         # Check if the user has permission to accept this request
         if user_type == 'sponsor':
-            if not event_request.sponsor or str(event_request.sponsor.id) != user_id:
-                messages.error(request, 'You do not have permission to accept this request')
-                return redirect('my_requests')
+            # For sponsor events, only the sponsor who created the event can accept
+            try:
+                event = SponsorEvent.objects.get(id=event_request.event_id)
+                if str(event.sponsor.id) != user_id:
+                    return JsonResponse({'error': 'You do not have permission to accept this request'}, status=403)
+            except SponsorEvent.DoesNotExist:
+                return JsonResponse({'error': 'Event not found'}, status=404)
         else:
-            if not event_request.college or str(event_request.college.id) != user_id:
-                messages.error(request, 'You do not have permission to accept this request')
-                return redirect('my_requests')
+            # For college events, only the college who created the event can accept
+            try:
+                event = CollegeEvent.objects.get(id=event_request.event_id)
+                if str(event.college.id) != user_id:
+                    return JsonResponse({'error': 'You do not have permission to accept this request'}, status=403)
+            except CollegeEvent.DoesNotExist:
+                return JsonResponse({'error': 'Event not found'}, status=404)
         
         # Update request status
         event_request.status = 'accepted'
@@ -863,16 +932,13 @@ def accept_request(request, request_id):
             print(f"Error creating chat message: {str(e)}")
             # Continue even if chat creation fails
         
-        messages.success(request, 'Request accepted successfully!')
-        return redirect('my_requests')
+        return JsonResponse({'message': 'Request accepted successfully'})
         
     except EventRequest.DoesNotExist:
-        messages.error(request, 'Request not found')
-        return redirect('my_requests')
+        return JsonResponse({'error': 'Request not found'}, status=404)
     except Exception as e:
         print(f"Error accepting request: {str(e)}")
-        messages.error(request, 'An error occurred while accepting the request')
-        return redirect('my_requests')
+        return JsonResponse({'error': 'An error occurred while accepting the request'}, status=500)
 
 @csrf_exempt
 def chat_view(request, request_id):
@@ -887,9 +953,29 @@ def chat_view(request, request_id):
         
         # Get the other party's information
         if user_type == 'sponsor':
-            other_party = College.objects.get(id=event_request.college.id)
+            if not event_request.college:
+                messages.error(request, 'Invalid request: College information missing')
+                return redirect('my_requests')
+            try:
+                other_party = College.objects.get(id=event_request.college.id)
+            except College.DoesNotExist:
+                messages.error(request, 'College not found')
+                return redirect('my_requests')
         else:
-            other_party = Sponsor.objects.get(id=event_request.sponsor.id)
+            if not event_request.sponsor:
+                messages.error(request, 'Invalid request: Sponsor information missing')
+                return redirect('my_requests')
+            try:
+                other_party = Sponsor.objects.get(id=event_request.sponsor.id)
+            except Sponsor.DoesNotExist:
+                messages.error(request, 'Sponsor not found')
+                return redirect('my_requests')
+        
+        # Verify the user is part of this request
+        if (user_type == 'sponsor' and str(event_request.sponsor.id) != user_id) or \
+           (user_type == 'college' and str(event_request.college.id) != user_id):
+            messages.error(request, 'Unauthorized access')
+            return redirect('my_requests')
         
         return render(request, 'listings/chat.html', {
             'request_id': request_id,
@@ -897,8 +983,12 @@ def chat_view(request, request_id):
             'user_id': user_id,
             'user_type': user_type
         })
-    except (EventRequest.DoesNotExist, Sponsor.DoesNotExist, College.DoesNotExist):
-        messages.error(request, 'Invalid request')
+    except EventRequest.DoesNotExist:
+        messages.error(request, 'Request not found')
+        return redirect('my_requests')
+    except Exception as e:
+        print(f"Error in chat_view: {str(e)}")
+        messages.error(request, 'An error occurred while accessing the chat')
         return redirect('my_requests')
 
 @csrf_exempt

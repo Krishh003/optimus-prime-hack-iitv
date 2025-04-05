@@ -29,7 +29,7 @@
                                 <a href="{% url 'event_details' request.event_id %}">{{ request.event_name }}</a>
                             </td>
                             <td>
-                                <span class="badge bg-{{ request.status|lower }}">
+                                <span class="badge bg-{{ request.status_color }}">
                                     {{ request.status|title }}
                                 </span>
                             </td>
@@ -38,9 +38,18 @@
                             <td>{{ request.created_at|date:"M d, Y" }}</td>
                             <td>
                                 {% if request.status == 'pending' %}
-                                    <button class="btn btn-sm btn-danger" onclick="cancelRequest('{{ request.id }}')">
-                                        Cancel
-                                    </button>
+                                    {% if request.event_creator_id == user_id %}
+                                        <button class="btn btn-sm btn-success" onclick="acceptRequest('{{ request.id }}')">
+                                            Accept
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="cancelRequest('{{ request.id }}')">
+                                            Reject
+                                        </button>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-danger" onclick="cancelRequest('{{ request.id }}')">
+                                            Cancel
+                                        </button>
+                                    {% endif %}
                                 {% endif %}
                                 {% if request.status == 'accepted' %}
                                     <a href="{% url 'chat' request.id %}" class="btn btn-sm btn-primary">
@@ -87,7 +96,7 @@
                                 <a href="{% url 'event_details' request.event_id %}">{{ request.event_name }}</a>
                             </td>
                             <td>
-                                <span class="badge bg-{{ request.status|lower }}">
+                                <span class="badge bg-{{ request.status_color }}">
                                     {{ request.status|title }}
                                 </span>
                             </td>
@@ -125,7 +134,25 @@
 <script>
 function acceptRequest(requestId) {
     if (confirm('Are you sure you want to accept this request?')) {
-        window.location.href = `/api/requests/${requestId}/accept/`;
+        fetch(`/api/requests/${requestId}/accept/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                window.location.href = `/chat/${requestId}/`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while accepting the request.');
+        });
     }
 }
 

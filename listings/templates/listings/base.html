@@ -10,11 +10,50 @@
     <link rel="stylesheet" href="{% static 'listings/css/styles.css' %}">
     {% csrf_token %}
     {% block extra_css %}{% endblock %}
+    <style>
+        .gradient-navbar {
+            background: linear-gradient(135deg, 
+                #191970 0%,  /* midnight blue */
+                #4B0082 30%,  /* indigo */
+                #800080 60%,  /* purple */
+                #FF1493 100%); /* deep pink */
+            background-size: 200% 200%;
+            animation: gradient 10s ease infinite;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .gradient-navbar .navbar-brand,
+        .gradient-navbar .nav-link,
+        .gradient-navbar .dropdown-item,
+        .gradient-navbar .dropdown-menu,
+        .gradient-navbar .navbar-toggler-icon {
+            color: white !important;
+        }
+        
+        .gradient-navbar .dropdown-menu {
+            background: rgba(25, 25, 112, 0.95); /* midnight blue with transparency */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .gradient-navbar .dropdown-item:hover {
+            background: rgba(255, 20, 147, 0.3); /* deep pink with transparency */
+        }
+        
+        .gradient-navbar .navbar-toggler {
+            border-color: rgba(255,255,255,0.5);
+        }
+        
+        @keyframes gradient {
+            0% {background-position: 0% 50%;}
+            50% {background-position: 100% 50%;}
+            100% {background-position: 0% 50%;}
+        }
+    </style>
 </head>
 
 <body>
     {% block navbar %}
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark gradient-navbar">
         <div class="container">
             <a class="navbar-brand animate-on-scroll" href="{% url 'home' %}">SponsorConnect</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -22,22 +61,11 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link animate-on-scroll" href="{% url 'sponsor-list' %}">Sponsors</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link animate-on-scroll" href="{% url 'client-list' %}">Clients</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link animate-on-scroll" href="{% url 'pricing' %}">Pricing</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link animate-on-scroll" href="/admin/">Admin</a>
-                    </li>
+                    <!-- Main navigation items removed -->
                 </ul>
                 <ul class="navbar-nav align-items-center">
                     <li class="nav-item me-2">
-                        <button class="btn btn-outline-primary theme-toggle animate-on-scroll" id="theme-toggle">
+                        <button class="btn btn-outline-light theme-toggle animate-on-scroll" id="theme-toggle">
                             <i class="fas fa-moon"></i>
                         </button>
                     </li>
@@ -47,7 +75,7 @@
                             <i class="fas fa-user-circle me-1"></i> {{ request.session.user_name }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                            <li><span class="dropdown-item-text text-muted">{{ request.session.user_email }}</span></li>
+                            <li><span class="dropdown-item-text text-light">{{ request.session.user_email }}</span></li>
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
