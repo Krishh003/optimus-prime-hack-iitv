@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'sponsor_dashboard' %}">Sponsor Dashboard</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link active" href="{% url 'sponsor_dashboard' %}">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'add_event' %}">Add Event</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'my_requests' %}">My Requests</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'my_history' %}">My History</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<div class="container mt-4">
+    <h2 class="mb-4">Available Sponsorship Opportunities</h2>
+    <div class="row">
+        {% for listing in listings %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <img src="{{ listing.college_photo.url }}" class="card-img-top" alt="{{ listing.college_name }}">
+                <div class="card-body">
+                    <h5 class="card-title">{{ listing.college_name }}</h5>
+                    <p class="card-text">
+                        <strong>Event:</strong> {{ listing.event_name }}<br>
+                        <strong>Type:</strong> {{ listing.get_event_type_display }}<br>
+                        <strong>Required Funding:</strong> ₹{{ listing.required_funding }}<br>
+                        <strong>Deliverables:</strong>
+                        <ul>
+                            {% for deliverable in listing.deliverables.split ',' %}
+                            <li>{{ deliverable }}</li>
+                            {% endfor %}
+                        </ul>
+                        <small class="text-muted">Deliverables can be negotiated</small>
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <form method="post" action="{% url 'send_sponsorship_request' listing.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary">I'm Interested</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No sponsorship opportunities available at the moment.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

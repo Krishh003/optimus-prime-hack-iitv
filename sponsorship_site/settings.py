@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,7 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'listings.apps.ListingsConfig',  # Add this line
+    'listings.apps.ListingsConfig',
 ]
 
 MIDDLEWARE = [
@@ -55,10 +56,11 @@ ROOT_URLCONF = 'sponsorship_site.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -78,7 +80,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'sponsorship_db',
         'USER': 'root',
-        'PASSWORD': 'cidco@kharghar',
+        'PASSWORD': 'Wisteria@123',
         'HOST': 'localhost',
         'PORT': '3306',
     }
@@ -124,6 +126,18 @@ STATICFILES_DIRS = [
     BASE_DIR / "listings/static",
 ]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Custom user models
+AUTH_USER_MODEL = 'listings.Sponsor'  # We'll use Sponsor as the base user model
+
+# Login URLs
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'sponsor_dashboard'
+LOGOUT_REDIRECT_URL = 'home'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
