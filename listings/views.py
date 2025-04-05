@@ -2,7 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Sponsor, College, SponsorEvent, CollegeEvent, EventRequest, SponsorHistory, CollegeSponsorshipHistory
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.utils import timezone
+from datetime import datetime, timedelta
+from .models import Sponsor, College, SponsorEvent, CollegeEvent, EventRequest, SponsorHistory, CollegeSponsorshipHistory, EVENT_TYPE_CHOICES
 from .forms import SponsorRegistrationForm, CollegeRegistrationForm, SponsorEventForm, CollegeEventForm
 
 def home(request):
@@ -32,18 +36,59 @@ def register_college(request):
         form = CollegeRegistrationForm()
     return render(request, 'listings/register_college.html', {'form': form})
 
-@login_required
 def sponsor_dashboard(request):
-    if not isinstance(request.user, Sponsor):
-        messages.error(request, 'Access denied. Please login as a sponsor.')
-        return redirect('home')
+    # Get filter parameters
+    event_type = request.GET.get('event_type')
+    budget = request.GET.get('budget')
+    state = request.GET.get('state')
     
-    events = CollegeEvent.objects.all()
-    return render(request, 'listings/sponsor_dashboard.html', {'events': events})
+    # Create some dummy data for display
+    events = [
+        {
+            'id': 1,
+            'event_name': 'Tech Fest 2025',
+            'college': {'username': 'IIT Bombay', 'college_photo': None},
+            'event_type': 'technical',
+            'amount': 50000,
+            'description': 'Annual technical festival with competitions, workshops, and exhibitions.',
+            'basic_deliverables': 'Logo on banners, Social media promotion, Stage mention',
+            'created_at': '2025-04-01'
+        },
+        {
+            'id': 2,
+            'event_name': 'Cultural Night',
+            'college': {'username': 'Delhi University', 'college_photo': None},
+            'event_type': 'cultural',
+            'amount': 30000,
+            'description': 'A grand cultural evening featuring music, dance, and theatrical performances.',
+            'basic_deliverables': 'Brand placement, VIP passes, Marketing rights',
+            'created_at': '2025-04-02'
+        },
+        {
+            'id': 3,
+            'event_name': 'Sports Meet 2025',
+            'college': {'username': 'NIT Trichy', 'college_photo': None},
+            'event_type': 'sports',
+            'amount': 40000,
+            'description': 'Inter-college sports competition with multiple sporting events.',
+            'basic_deliverables': 'Jersey branding, Ground displays, Award ceremony presence',
+            'created_at': '2025-04-03'
+        }
+    ]
+    
+    context = {
+        'events': events,
+        'filters': {
+            'event_type': event_type,
+            'budget': budget,
+            'state': state,
+        }
+    }
+    return render(request, 'listings/sponsor_dashboard.html', context)
 
 @login_required
 def college_dashboard(request):
-    if not isinstance(request.user, College):
+    if not isinstance(request.user, Sponsor) or not request.user.is_college:
         messages.error(request, 'Access denied. Please login as a college.')
         return redirect('home')
     
@@ -52,39 +97,61 @@ def college_dashboard(request):
 
 @login_required
 def create_sponsor_event(request):
-    if not isinstance(request.user, Sponsor):
-        messages.error(request, 'Access denied. Please login as a sponsor.')
+    if not hasattr(request.user, 'sponsor'):
+        messages.error(request, "Only sponsors can create events.")
         return redirect('home')
     
     if request.method == 'POST':
-        form = SponsorEventForm(request.POST)
-        if form.is_valid():
-            event = form.save(commit=False)
-            event.sponsor = request.user
-            event.save()
-            messages.success(request, 'Event created successfully!')
-            return redirect('sponsor_dashboard')
-    else:
-        form = SponsorEventForm()
-    return render(request, 'listings/create_sponsor_event.html', {'form': form})
+        event_name = request.POST.get('event_name')
+        event_type = request.POST.get('event_type')
+        amount = request.POST.get('amount')
+        description = request.POST.get('description')
+        deliverables = request.POST.getlist('deliverables[]')
+        
+        try:
+            # Create the sponsor event
+            sponsor_event = SponsorEvent.objects.create(
+                sponsor=request.user.sponsor,
+                event_name=event_name,
+                event_type=event_type,
+                amount=amount,
+                description=description,
+                basic_deliverables=", ".join(deliverables)
+            )
+            messages.success(request, "Sponsorship opportunity created successfully!")
+            return redirect('sdashboard')
+        except Exception as e:
+            messages.error(request, f"Error creating event: {str(e)}")
+            return render(request, 'listings/create_sponsor_event.html')
+    
+    return render(request, 'listings/create_sponsor_event.html')
 
 @login_required
 def create_college_event(request):
-    if not isinstance(request.user, College):
-        messages.error(request, 'Access denied. Please login as a college.')
+    if not request.user.is_college:
+        messages.error(request, "Only colleges can create events.")
         return redirect('home')
     
     if request.method == 'POST':
-        form = CollegeEventForm(request.POST)
-        if form.is_valid():
-            event = form.save(commit=False)
-            event.college = request.user
-            event.save()
-            messages.success(request, 'Event created successfully!')
+        try:
+            event = CollegeEvent.objects.create(
+                college=request.user,
+                event_name=request.POST['event_name'],
+                event_type=request.POST['event_type'],
+                amount=request.POST['amount'],
+                description=request.POST['description'],
+                contact_no=request.POST.get('contact_no', ''),
+                basic_deliverables=request.POST['basic_deliverables']
+            )
+            messages.success(request, "Event created successfully!")
             return redirect('college_dashboard')
-    else:
-        form = CollegeEventForm()
-    return render(request, 'listings/create_college_event.html', {'form': form})
+        except Exception as e:
+            messages.error(request, f"Error creating event: {str(e)}")
+    
+    context = {
+        'form': {'fields': {'event_type': {'choices': EVENT_TYPE_CHOICES}}}
+    }
+    return render(request, 'listings/create_college_event.html', context)
 
 @login_required
 def send_event_request(request, event_id):
@@ -137,3 +204,44 @@ def my_history(request):
         template = 'listings/college_history.html'
     
     return render(request, template, {'history': history})
+
+def sdashboard(request):
+    # Create some dummy data for display
+    now = timezone.now()
+    events = [
+        {
+            'id': 1,
+            'event_name': 'Tech Fest 2025',
+            'college': {'username': 'IIT Bombay', 'college_photo': None},
+            'event_type': 'technical',
+            'amount': 50000,
+            'description': 'Annual technical festival with competitions, workshops, and exhibitions.',
+            'basic_deliverables': 'Logo on banners, Social media promotion, Stage mention',
+            'created_at': now - timedelta(days=2)
+        },
+        {
+            'id': 2,
+            'event_name': 'Cultural Night',
+            'college': {'username': 'Delhi University', 'college_photo': None},
+            'event_type': 'cultural',
+            'amount': 30000,
+            'description': 'A grand cultural evening featuring music, dance, and theatrical performances.',
+            'basic_deliverables': 'Brand placement, VIP passes, Marketing rights',
+            'created_at': now - timedelta(days=1)
+        },
+        {
+            'id': 3,
+            'event_name': 'Sports Meet 2025',
+            'college': {'username': 'NIT Trichy', 'college_photo': None},
+            'event_type': 'sports',
+            'amount': 40000,
+            'description': 'Inter-college sports competition with multiple sporting events.',
+            'basic_deliverables': 'Jersey branding, Ground displays, Award ceremony presence',
+            'created_at': now - timedelta(hours=12)
+        }
+    ]
+    
+    context = {
+        'events': events,
+    }
+    return render(request, 'listings/sdashboard.html', context)

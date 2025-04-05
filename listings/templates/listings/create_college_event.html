@@ -1,0 +1,105 @@
+{% extends 'listings/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Create New Event</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Event Name -->
+                        <div class="mb-3">
+                            <label for="event_name" class="form-label">Event Name *</label>
+                            <input type="text" class="form-control" id="event_name" name="event_name" required>
+                            <div class="invalid-feedback">
+                                Please provide an event name.
+                            </div>
+                        </div>
+
+                        <!-- Event Type -->
+                        <div class="mb-3">
+                            <label for="event_type" class="form-label">Event Type *</label>
+                            <select class="form-select" id="event_type" name="event_type" required>
+                                <option value="">Select event type</option>
+                                {% for value, label in form.fields.event_type.choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select an event type.
+                            </div>
+                        </div>
+
+                        <!-- Amount -->
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">Expected Sponsorship Amount (₹) *</label>
+                            <input type="number" class="form-control" id="amount" name="amount" min="0" step="1000" required>
+                            <div class="invalid-feedback">
+                                Please provide a valid amount.
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Event Description *</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                            <div class="invalid-feedback">
+                                Please provide an event description.
+                            </div>
+                        </div>
+
+                        <!-- Contact Number -->
+                        <div class="mb-3">
+                            <label for="contact_no" class="form-label">Contact Number</label>
+                            <input type="tel" class="form-control" id="contact_no" name="contact_no" pattern="[0-9]{10}">
+                            <div class="form-text">Optional: Enter a 10-digit contact number</div>
+                        </div>
+
+                        <!-- Basic Deliverables -->
+                        <div class="mb-3">
+                            <label for="basic_deliverables" class="form-label">Basic Deliverables *</label>
+                            <textarea class="form-control" id="basic_deliverables" name="basic_deliverables" rows="4" required
+                                    placeholder="Enter deliverables separated by commas. Example:&#10;Logo on event banner, Social media promotion, Stage mention"></textarea>
+                            <div class="invalid-feedback">
+                                Please list the basic deliverables.
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Create Event</button>
+                            <a href="{% url 'college_dashboard' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form Validation Script -->
+{% block extra_js %}
+<script>
+    // Form validation
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms)
+            .forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+    })()
+</script>
+{% endblock %}
+{% endblock %} 

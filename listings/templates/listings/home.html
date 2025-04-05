@@ -3,6 +3,14 @@
 
 {% block content %}
 <div class="container">
+    <!-- Quick Access Buttons -->
+    <div class="row mt-4 mb-4">
+        <div class="col-12 text-center">
+            <a href="{% url 'sdashboard' %}" class="btn btn-primary btn-lg mx-2">View Sponsor Dashboard</a>
+            <a href="{% url 'create_sponsor_event' %}" class="btn btn-success btn-lg mx-2">Add Event</a>
+        </div>
+    </div>
+
     <!-- Hero Section -->
     <div class="row align-items-center py-5">
         <div class="col-md-6">

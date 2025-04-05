@@ -1,0 +1,134 @@
+{% extends 'listings/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Create Sponsorship Opportunity</h3>
+        <a href="{% url 'sdashboard' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Event Name -->
+                        <div class="mb-3">
+                            <label for="event_name" class="form-label">Event Name</label>
+                            <input type="text" class="form-control" id="event_name" name="event_name" required>
+                            <div class="invalid-feedback">Please provide an event name.</div>
+                        </div>
+
+                        <!-- Event Type -->
+                        <div class="mb-3">
+                            <label for="event_type" class="form-label">Event Type</label>
+                            <select class="form-select" id="event_type" name="event_type" required>
+                                <option value="" selected disabled>Select event type</option>
+                                <option value="technical">Technical</option>
+                                <option value="cultural">Cultural</option>
+                                <option value="musical">Musical</option>
+                                <option value="dance">Dance</option>
+                                <option value="drama">Drama</option>
+                                <option value="sports">Sports</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <div class="invalid-feedback">Please select an event type.</div>
+                        </div>
+
+                        <!-- Sponsorship Amount -->
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">Sponsorship Amount (₹)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" class="form-control" id="amount" name="amount" min="1000" required>
+                            </div>
+                            <div class="invalid-feedback">Please enter a valid amount (minimum ₹1000).</div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                            <div class="form-text">Describe what you're looking for and any specific requirements.</div>
+                            <div class="invalid-feedback">Please provide a description.</div>
+                        </div>
+
+                        <!-- Basic Deliverables -->
+                        <div class="mb-3">
+                            <label for="basic_deliverables" class="form-label">Basic Deliverables</label>
+                            <div id="deliverables-container">
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control deliverable-input" name="deliverables[]" required>
+                                    <button type="button" class="btn btn-outline-success add-deliverable">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-text">Add what you'll provide to the college (e.g., "Logo on event banner", "Social media promotion")</div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus-circle me-2"></i>Create Sponsorship Opportunity
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const form = document.querySelector('.needs-validation');
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+
+    // Dynamic deliverables
+    const container = document.getElementById('deliverables-container');
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('add-deliverable') || e.target.parentElement.classList.contains('add-deliverable')) {
+            const newDeliverable = document.createElement('div');
+            newDeliverable.className = 'input-group mb-2';
+            newDeliverable.innerHTML = `
+                <input type="text" class="form-control deliverable-input" name="deliverables[]" required>
+                <button type="button" class="btn btn-outline-danger remove-deliverable">
+                    <i class="fas fa-minus"></i>
+                </button>
+            `;
+            container.appendChild(newDeliverable);
+        }
+        if (e.target.classList.contains('remove-deliverable') || e.target.parentElement.classList.contains('remove-deliverable')) {
+            const button = e.target.closest('.remove-deliverable');
+            if (button) {
+                button.closest('.input-group').remove();
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,163 @@
+{% extends 'listings/base.html' %}
+{% load static %}
+{% load listing_filters %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header with Navigation -->
+    <div class="d-flex justify-content-between align-items-center py-3 border-bottom mb-4">
+        <h3 class="mb-0">Sponsor Dashboard</h3>
+        <div class="nav">
+            <a href="{% url 'sdashboard' %}" class="nav-link text-dark">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="{% url 'create_sponsor_event' %}" class="nav-link text-dark">
+                <i class="fas fa-plus"></i> Add Event
+            </a>
+            <a href="{% url 'my_requests' %}" class="nav-link text-dark">
+                <i class="fas fa-envelope"></i> My Requests
+            </a>
+            <a href="{% url 'my_history' %}" class="nav-link text-dark">
+                <i class="fas fa-history"></i> History
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="event_type" class="form-label">Event Type</label>
+                    <select name="event_type" id="event_type" class="form-select">
+                        <option value="">All Types</option>
+                        <option value="technical">Technical</option>
+                        <option value="cultural">Cultural</option>
+                        <option value="sports">Sports</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="budget" class="form-label">Max Budget</label>
+                    <input type="number" class="form-control" id="budget" name="budget" placeholder="Enter amount">
+                </div>
+                <div class="col-md-3">
+                    <label for="state" class="form-label">State</label>
+                    <input type="text" class="form-control" id="state" name="state" placeholder="Enter state">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary d-block w-100">
+                        <i class="fas fa-filter"></i> Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Events Grid -->
+    <div class="row">
+        {% for event in events %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                {% if event.college.college_photo %}
+                    <img src="{{ event.college.college_photo.url }}" class="card-img-top" alt="{{ event.college.username }}" style="height: 200px; object-fit: cover;">
+                {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                        <i class="fas fa-university fa-4x text-muted"></i>
+                    </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ event.event_name }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ event.college.username }}</h6>
+                    
+                    <div class="mb-3">
+                        <span class="badge bg-primary">{{ event.event_type }}</span>
+                        <span class="badge bg-success">₹{{ event.amount }}</span>
+                    </div>
+
+                    <p class="card-text">{{ event.description|truncatewords:30 }}</p>
+                    
+                    <div class="mb-3">
+                        <h6>Basic Deliverables:</h6>
+                        <ul class="list-unstyled">
+                            {% with deliverables=event.basic_deliverables|split:", " %}
+                            {% for deliverable in deliverables|slice:":3" %}
+                            <li><i class="fas fa-check text-success me-2"></i>{{ deliverable }}</li>
+                            {% endfor %}
+                            {% endwith %}
+                        </ul>
+                        <small class="text-muted">* Deliverables can be negotiated</small>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <form method="post" action="{% url 'send_event_request' event.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-handshake me-1"></i> I'm Interested
+                            </button>
+                        </form>
+                        <small class="text-muted">Posted {{ event.created_at|timesince }} ago</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No sponsorship opportunities available at the moment.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if events.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if events.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ events.previous_page_number }}">Previous</a>
+            </li>
+            {% endif %}
+
+            {% for num in events.paginator.page_range %}
+            <li class="page-item {% if events.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            </li>
+            {% endfor %}
+
+            {% if events.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ events.next_page_number }}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Preserve filter values after form submission
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        const eventType = urlParams.get('event_type');
+        if (eventType) {
+            document.getElementById('event_type').value = eventType;
+        }
+        
+        const budget = urlParams.get('budget');
+        if (budget) {
+            document.getElementById('budget').value = budget;
+        }
+        
+        const state = urlParams.get('state');
+        if (state) {
+            document.getElementById('state').value = state;
+        }
+    });
+</script>
+{% endblock %} 

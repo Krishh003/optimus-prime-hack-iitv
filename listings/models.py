@@ -2,6 +2,13 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 
+EVENT_TYPE_CHOICES = [
+    ('technical', 'Technical'),
+    ('cultural', 'Cultural'),
+    ('sports', 'Sports'),
+    ('other', 'Other'),
+]
+
 class Sponsor(AbstractUser):
     contact_no = models.CharField(max_length=15, blank=True, null=True)
     avg_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00, 
@@ -36,15 +43,17 @@ class SponsorEvent(models.Model):
 
 class CollegeEvent(models.Model):
     college = models.ForeignKey(Sponsor, on_delete=models.CASCADE, related_name='college_events', limit_choices_to={'is_college': True})
-    event_name = models.CharField(max_length=255)
+    event_name = models.CharField(max_length=200)
+    event_type = models.CharField(max_length=20, choices=EVENT_TYPE_CHOICES, default='other')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.TextField()
-    contact_no = models.CharField(max_length=15, blank=True, null=True)
+    contact_no = models.CharField(max_length=15, blank=True, default='')
     basic_deliverables = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.college.username} - {self.event_name}"
+        return f"{self.event_name} by {self.college.username}"
 
 class EventRequest(models.Model):
     EVENT_TYPE_CHOICES = [

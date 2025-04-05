@@ -5,15 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="25c295f7-9607-47ed-86fc-cc0c1be4b9e0" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/listings/admin.py" beforeDir="false" afterPath="$PROJECT_DIR$/listings/admin.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/listings/forms.py" beforeDir="false" afterPath="$PROJECT_DIR$/listings/forms.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/listings/migrations/0001_initial.py" beforeDir="false" afterPath="$PROJECT_DIR$/listings/migrations/0001_initial.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/listings/migrations/0002_clientlisting_is_active_clientlisting_user_and_more.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/listings/migrations/0003_alter_clientlisting_user_alter_sponsorlisting_user.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/listings/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/listings/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/listings/templates/listings/add_event.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/listings/templates/listings/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/listings/templates/listings/base.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/listings/templates/listings/home.html" beforeDir="false" afterPath="$PROJECT_DIR$/listings/templates/listings/home.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/listings/templates/listings/sponsor_dashboard.html" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/listings/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/listings/urls.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/listings/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/listings/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sponsorship_site/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/sponsorship_site/settings.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -36,7 +35,7 @@
   "keyToString": {
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main"
+    "git-widget-placeholder": "rushika"
   }
 }]]></component>
   <component name="SharedIndexes">

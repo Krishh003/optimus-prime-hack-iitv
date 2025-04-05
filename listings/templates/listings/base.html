@@ -20,41 +20,45 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    {% if user.is_authenticated %}
-                        {% if user.is_college %}
+                    {% if request.resolver_match.url_name == 'sdashboard' %}
+                        <!-- Show nothing in the main nav for sdashboard -->
+                    {% else %}
+                        {% if user.is_authenticated %}
+                            {% if user.is_college %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'college_dashboard' %}">Dashboard</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'create_college_event' %}">Create Event</a>
+                                </li>
+                            {% else %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'sdashboard' %}">Dashboard</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'create_sponsor_event' %}">Create Event</a>
+                                </li>
+                            {% endif %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'college_dashboard' %}">Dashboard</a>
+                                <a class="nav-link" href="{% url 'my_requests' %}">My Requests</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'create_college_event' %}">Create Event</a>
+                                <a class="nav-link" href="{% url 'my_history' %}">History</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'logout' %}">Logout</a>
                             </li>
                         {% else %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'sponsor_dashboard' %}">Dashboard</a>
+                                <a class="nav-link" href="{% url 'register_sponsor' %}">Register as Sponsor</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'create_sponsor_event' %}">Create Event</a>
+                                <a class="nav-link" href="{% url 'register_college' %}">Register as College</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'login' %}">Login</a>
                             </li>
                         {% endif %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'my_requests' %}">My Requests</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'my_history' %}">History</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'logout' %}">Logout</a>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'register_sponsor' %}">Register as Sponsor</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'register_college' %}">Register as College</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}">Login</a>
-                        </li>
                     {% endif %}
                     {% if user.is_staff %}
                         <li class="nav-item">

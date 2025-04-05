@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('sdashboard/', views.sdashboard, name='sdashboard'),
     
     # Authentication URLs
     path('login/', auth_views.LoginView.as_view(template_name='listings/login.html'), name='login'),
@@ -18,6 +19,9 @@ urlpatterns = [
     # Event Creation URLs
     path('sponsor/event/create/', views.create_sponsor_event, name='create_sponsor_event'),
     path('college/event/create/', views.create_college_event, name='create_college_event'),
+    path('create-event/', views.create_college_event, name='create_college_event'),
+    path('create-sponsor-event/', views.create_sponsor_event, name='create_sponsor_event'),
+    path('addevent/', views.create_sponsor_event, name='create_sponsor_event'),
     
     # Request URLs
     path('event/request/<int:event_id>/', views.send_event_request, name='send_event_request'),
