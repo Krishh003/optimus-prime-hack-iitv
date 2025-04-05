@@ -1,0 +1,179 @@
+{% extends 'listings/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid login-background">
+    <div class="row min-vh-100 align-items-center justify-content-center py-5">
+        <div class="col-md-8 col-lg-7 col-xl-6">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <div class="card-header bg-gradient-primary text-white text-center py-4">
+                    <h2 class="mb-1 fw-bold">Create Account</h2>
+                    <p class="text-white-50 mb-0">Join our community today</p>
+                </div>
+                <div class="card-body p-5">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="id_name" class="form-label">Full Name</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user text-muted"></i></span>
+                                    {{ form.name }}
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label for="id_email" class="form-label">Email Address</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-envelope text-muted"></i></span>
+                                    {{ form.email }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="id_contact_no" class="form-label">Contact Number</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-phone text-muted"></i></span>
+                                    {{ form.contact_no }}
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label for="id_state" class="form-label">State</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-map-marker-alt text-muted"></i></span>
+                                    {{ form.state }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="id_address" class="form-label">Address</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-home text-muted"></i></span>
+                                {{ form.address }}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="id_password" class="form-label">Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock text-muted"></i></span>
+                                    {{ form.password }}
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label for="id_confirm_password" class="form-label">Confirm Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock text-muted"></i></span>
+                                    {{ form.confirm_password }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="id_user_type" class="form-label">I am a</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-users text-muted"></i></span>
+                                {{ form.user_type }}
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-3">
+                                <i class="fas fa-user-plus me-2"></i>Create Account
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center py-4 bg-light">
+                    <div class="small">
+                        Already have an account? <a href="{% url 'login' %}" class="text-primary fw-bold">Login here!</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+:root {
+    --primary-gradient: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+}
+
+.login-background {
+    background: var(--primary-gradient);
+    min-height: 100vh;
+}
+
+.card {
+    box-shadow: 0 15px 35px rgba(50,50,93,.1), 0 5px 15px rgba(0,0,0,.07) !important;
+    border: none;
+}
+
+.card-header {
+    background: var(--primary-gradient) !important;
+}
+
+.form-control {
+    border-radius: 10px;
+    border-color: #e1e5eb;
+    transition: all 0.3s ease;
+    padding: 0.75rem 1rem;
+}
+
+.form-control:focus {
+    border-color: #5e72e4;
+    box-shadow: 0 0 0 0.2rem rgba(94, 114, 228, 0.25);
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+    border: 1px solid #e1e5eb;
+    border-radius: 10px;
+}
+
+.btn-primary {
+    background: var(--primary-gradient);
+    border: none;
+    transition: transform 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 7px 14px rgba(50,50,93,.1), 0 3px 6px rgba(0,0,0,.08);
+}
+
+.alert {
+    border-radius: 10px;
+}
+
+select.form-control {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23343a40' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+}
+
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1.5rem !important;
+    }
+    
+    .row {
+        margin-left: -0.5rem;
+        margin-right: -0.5rem;
+    }
+    
+    .col-md-6 {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+}
+</style>
+{% endblock %}

@@ -6,20 +6,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const savedTheme = localStorage.getItem('theme') || 'light-mode';
     body.className = savedTheme;
 
-    themeToggle.innerHTML = savedTheme === 'dark-mode' ?
-        '<i class="fas fa-sun"></i>' :
-        '<i class="fas fa-moon"></i>';
+    // Update toggle button icon based on current theme
+    updateThemeIcon(savedTheme);
 
     // Toggle theme
     themeToggle.addEventListener('click', function() {
-        body.classList.toggle('dark-mode');
-        const newTheme = body.className;
-        localStorage.setItem('theme', newTheme);
+        const currentTheme = body.className;
+        const newTheme = currentTheme === 'light-mode' ? 'dark-mode' : 'light-mode';
 
-        this.innerHTML = newTheme === 'dark-mode' ?
+        body.className = newTheme;
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon(newTheme);
+    });
+
+    function updateThemeIcon(theme) {
+        themeToggle.innerHTML = theme === 'dark-mode' ?
             '<i class="fas fa-sun"></i>' :
             '<i class="fas fa-moon"></i>';
-    });
+    }
 
     // Scroll animations
     const animateElements = document.querySelectorAll('.animate-on-scroll');
