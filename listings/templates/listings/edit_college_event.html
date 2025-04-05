@@ -1,0 +1,55 @@
+{% extends 'listings/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">Edit College Event</h4>
+                        <a href="{% url 'event_details' event.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Event
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="event_name" class="form-label">Event Name</label>
+                            <input type="text" class="form-control" id="event_name" name="event_name" value="{{ form.event_name.value }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" required>{{ form.description.value }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">Amount (₹)</label>
+                            <input type="number" class="form-control" id="amount" name="amount" value="{{ form.amount.value }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="contact_no" class="form-label">Contact Number</label>
+                            <input type="text" class="form-control" id="contact_no" name="contact_no" value="{{ form.contact_no.value }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="location" class="form-label">Location</label>
+                            <input type="text" class="form-control" id="location" name="location" value="{{ form.location.value }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="basic_deliverables" class="form-label">Basic Deliverables</label>
+                            <textarea class="form-control" id="basic_deliverables" name="basic_deliverables" rows="3" required>{{ form.basic_deliverables.value }}</textarea>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

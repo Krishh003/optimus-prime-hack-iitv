@@ -1,87 +1,350 @@
-{% extends 'listings/base.html' %} {% block content %}
-<div class="container py-5">
-    <h1 class="text-center animate-on-scroll animate__animated animate__fadeInUp">College Listings</h1>
+{% extends 'listings/base.html' %}
+{% load static %}
+{% load humanize %}
 
-    <div class="row mt-4">
-        {% for college in colleges %}
-        <div class="col-md-4 mb-4 animate-on-scroll">
-            <div class="card h-100 shadow">
-                <div class="card-header bg-success text-white">
-                    <h3 class="mb-0">{{ college.name }}</h3>
+{% block navbar %}
+<!-- Navbar with Custom Gradient -->
+<nav class="navbar navbar-expand-lg navbar-dark mb-4" style="background: linear-gradient(135deg, var(--midnight-blue) 0%, var(--dark-purple) 100%);">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
+            <i class="fas fa-handshake me-2"></i>
+            <span class="font-weight-bold">SponsorConnect</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#clientNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="clientNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item mx-1">
+                    <a class="nav-link hover-underline" href="{% url 'add_event' %}">
+                        <i class="fas fa-plus-circle me-1"></i>Add Event
+                    </a>
+                </li>
+                <li class="nav-item mx-1">
+                    <a class="nav-link hover-underline" href="{% url 'my_requests' %}">
+                        <i class="fas fa-clipboard-list me-1"></i>My Requests
+                    </a>
+                </li>
+                <li class="nav-item mx-1">
+                    <a class="nav-link hover-underline" href="{% url 'my_history' %}">
+                        <i class="fas fa-history me-1"></i>My History
+                    </a>
+                </li>
+                <li class="nav-item dropdown ms-1">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="avatar-sm me-2" style="background: rgba(255,255,255,0.2);">
+                            <i class="fas fa-user-circle" style="color: var(--light-pink);"></i>
+                        </div>
+                        <span>Profile</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg" style="background: linear-gradient(135deg, var(--dark-purple) 0%, var(--violet) 100%); border: none;">
+                        <li><a class="dropdown-item text-white hover-item" href="{% url 'profile' %}"><i class="fas fa-user me-2"></i>My Profile</a></li>
+                        <li><a class="dropdown-item text-white hover-item" href="{% url 'settings' %}"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                        <li><hr class="dropdown-divider bg-light-opacity"></li>
+                        <li><a class="dropdown-item text-white hover-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        /* Color Scheme */
+        --midnight-blue: #191970;
+        --dark-purple: #4B0082;
+        --violet: #8A2BE2;
+        --soft-pink: #FF69B4;
+        --light-pink: #FFB6C1;
+        --white: #FFFFFF;
+        --off-white: #F8F8FF;
+        
+        /* Additional Colors */
+        --light-purple: #f3eefc;
+        --text-dark: #2d3748;
+    }
+    
+    /* Vertical Card Layout */
+    .vertical-card {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        transition: all 0.3s ease;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .vertical-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+    
+    .card-header-gradient {
+        background: linear-gradient(135deg, var(--midnight-blue) 0%, var(--dark-purple) 100%);
+        color: white;
+        padding: 1.25rem;
+    }
+    
+    .card-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 1.5rem;
+    }
+    
+    .card-footer {
+        background: var(--off-white);
+        border-top: 1px solid rgba(0,0,0,0.05);
+        padding: 1rem 1.5rem;
+    }
+    
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        margin-top: auto;
+    }
+    
+    .stat-item {
+        background: var(--light-purple);
+        border-radius: 8px;
+        padding: 0.75rem;
+        text-align: center;
+    }
+    
+    /* Badges */
+    .tag-badge {
+        background: var(--light-pink);
+        color: var(--dark-purple);
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+        border-radius: 20px;
+        padding: 0.35em 0.75em;
+        font-size: 0.8em;
+        display: inline-block;
+    }
+    
+    /* Hover Effects */
+    .hover-underline {
+        position: relative;
+    }
+    
+    .hover-underline::after {
+        content: '';
+        position: absolute;
+        width: 0;
+        height: 2px;
+        bottom: 0;
+        left: 0;
+        background-color: var(--light-pink);
+        transition: width 0.3s ease;
+    }
+    
+    .hover-underline:hover::after {
+        width: 100%;
+    }
+    
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-6">
+            <h2 style="background: linear-gradient(135deg, var(--midnight-blue) 0%, var(--dark-purple) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; font-size: 3.5rem;">
+                <i class="fas fa-university me-2"></i>College Events
+            </h2>
+            <p class="text-muted">Discover sponsorship opportunities for your college events</p>
+        </div>
+        <div class="col-md-6 text-end">
+            {% if is_authenticated %}
+                <a href="{% url 'create-college-event' %}" 
+                   class="btn btn-primary" style="background: var(--violet); border: none;">
+                    <i class="fas fa-plus-circle me-1"></i>Create New Event
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-4">
+        {% for event in events %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="vertical-card">
+                <div class="card-header-gradient">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0 text-white">
+                            <i class="fas fa-university me-2"></i>{{ event.event_name }}
+                        </h5>
+                        <span class="badge" style="background: rgba(255,255,255,0.2); color: white;">{{ event.event_type }}</span>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <div class="d-flex justify-content-between mb-3">
-                        <div>
-                            <i class="fas fa-envelope fa-2x text-muted"></i>
-                            <h4 class="mt-2">{{ college.email }}</h4>
-                        </div>
-                        <div class="text-end">
-                            <i class="fas fa-phone fa-2x text-muted"></i>
-                            <div class="mt-2">
-                                <span class="btn btn-sm btn-outline-success">
-                                    {{ college.contact_no }}
-                                </span>
-                            </div>
-                        </div>
+                    <p class="card-text mb-4">{{ event.description|truncatewords:25 }}</p>
+                    
+                    <div class="mb-3">
+                        {% for tag in event.event_tags %}
+                            <span class="tag-badge">{{ tag }}</span>
+                        {% endfor %}
                     </div>
-                    {% if college.description %}
-                    <p class="card-text">{{ college.description }}</p>
-                    {% endif %} {% if college.state %}
-                    <p class="card-text">State: {{ college.state }}</p>
-                    {% endif %} {% if college.avg_rating %}
-                    <p class="card-text">Rating: {{ college.avg_rating }}/5.0</p>
-                    {% endif %}
-                    <div class="d-grid gap-2 mt-3">
-                        <a href="mailto:{{ college.email }}" class="btn btn-success">
-                            <i class="fas fa-envelope me-2"></i>Email
-                        </a>
+                    
+                    <div class="stats-grid mt-auto">
+                        <div class="stat-item">
+                            <small class="text-muted d-block">Amount</small>
+                            <strong style="color: var(--violet);">₹{{ event.amount|intcomma }}</strong>
+                        </div>
+                        <div class="stat-item">
+                            <small class="text-muted d-block">Contact</small>
+                            <strong style="color: var(--violet);">{{ event.contact_no }}</strong>
+                        </div>
+                        <div class="stat-item">
+                            <small class="text-muted d-block">Location</small>
+                            <strong style="color: var(--violet);">{{ event.location }}</strong>
+                        </div>
+                        <div class="stat-item">
+                            <small class="text-muted d-block">Posted</small>
+                            <strong style="color: var(--violet);">{{ event.created_at|date:"M d" }}</strong>
+                        </div>
                     </div>
                 </div>
-                <div class="card-footer text-muted small">
-                    Listed {{ college.created_at|timesince }} ago
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>{{ event.created_at|timesince }} ago
+                        </small>
+                        {% if is_authenticated %}
+                            <button class="btn btn-sm" onclick="registerInterest('{{ event.id }}')" 
+                                    style="background: var(--violet); color: white; border: none;">
+                                <i class="fas fa-handshake me-1"></i>Interested
+                            </button>
+                        {% else %}
+                            <a href="{% url 'login' %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-sign-in-alt me-1"></i>Login
+                            </a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
-        {% endfor %}
-    </div>
-
-    <h2 class="text-center mt-5 animate-on-scroll animate__animated animate__fadeInUp">College Events</h2>
-    <div class="row mt-4">
-        {% for event in college_events %}
-        <div class="col-md-4 mb-4 animate-on-scroll">
-            <div class="card h-100 shadow">
-                <div class="card-header bg-warning text-white">
-                    <h3 class="mb-0">{{ event.event_name }}</h3>
-                </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card text-center py-5" style="background: var(--off-white); border: none;">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between mb-3">
-                        <div>
-                            <i class="fas fa-dollar-sign fa-2x text-muted"></i>
-                            <h4 class="mt-2">${{ event.amount }}</h4>
-                        </div>
-                        <div class="text-end">
-                            <i class="fas fa-phone fa-2x text-muted"></i>
-                            <div class="mt-2">
-                                <span class="btn btn-sm btn-outline-warning">
-                                    {{ event.contact_no }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <p class="card-text">{{ event.description }}</p>
-                    <p class="card-text"><small class="text-muted">Deliverables: {{ event.basic_deliverables }}</small></p>
-                    <div class="d-grid gap-2 mt-3">
-                        <a href="mailto:{{ event.college.email }}" class="btn btn-warning">
-                            <i class="fas fa-envelope me-2"></i>Email
+                    <i class="fas fa-calendar-times display-4 mb-3" style="color: var(--violet);"></i>
+                    <h4 class="mb-3" style="color: var(--dark-purple);">No college events available</h4>
+                    <p class="text-muted mb-4">Check back later or create a new event</p>
+                    {% if is_authenticated %}
+                        <a href="{% url 'create-college-event' %}" 
+                           class="btn btn-primary" style="background: var(--violet); border: none;">
+                            <i class="fas fa-plus-circle me-1"></i>Create Event
                         </a>
-                    </div>
-                </div>
-                <div class="card-footer text-muted small">
-                    By {{ event.college.name }} | Listed {{ event.created_at|timesince }} ago
+                    {% endif %}
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
 </div>
+
+<!-- Floating Action Button -->
+{% if is_authenticated %}
+<div class="position-fixed bottom-4 end-4 z-index-10">
+    <a href="{% url 'create-college-event' %}" 
+       class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center"
+       style="width: 60px; height: 60px; background: var(--violet); border: none;">
+        <i class="fas fa-plus"></i>
+    </a>
+</div>
+{% endif %}
+
+<!-- Toasts -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="successToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header text-white" style="background: var(--dark-purple);">
+            <strong class="me-auto">Success</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">Success!</div>
+    </div>
+</div>
+
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="errorToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header text-white" style="background: var(--violet);">
+            <strong class="me-auto">Error</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">Error occurred</div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.4.0/dist/confetti.browser.min.js"></script>
+
+<script>
+function registerInterest(eventId) {
+    fetch(`/api/events/${eventId}/interest/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Show success message
+            const button = document.querySelector(`button[onclick="registerInterest('${eventId}')"]`);
+            if (button) {
+                button.innerHTML = '<i class="fas fa-check me-1"></i>Registered';
+                button.style.background = 'var(--dark-purple)';
+                button.disabled = true;
+            }
+            
+            // Show toast notification
+            const toastEl = document.getElementById('successToast');
+            if (toastEl) {
+                const toast = new bootstrap.Toast(toastEl);
+                toastEl.querySelector('.toast-body').textContent = data.message || 'Interest registered successfully!';
+                toast.show();
+            }
+            
+            // Add confetti effect
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#191970', '#4B0082', '#8A2BE2']
+                });
+            }
+        } else {
+            // Show error message
+            const toastEl = document.getElementById('errorToast');
+            if (toastEl) {
+                const toast = new bootstrap.Toast(toastEl);
+                toastEl.querySelector('.toast-body').textContent = data.message || 'An error occurred';
+                toast.show();
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const toastEl = document.getElementById('errorToast');
+        if (toastEl) {
+            const toast = new bootstrap.Toast(toastEl);
+            toastEl.querySelector('.toast-body').textContent = 'An error occurred while processing your request';
+            toast.show();
+        }
+    });
+}
+</script>
 {% endblock %}

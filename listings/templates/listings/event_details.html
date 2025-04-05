@@ -1,0 +1,78 @@
+{% extends 'listings/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">Event Details</h4>
+                        <a href="{% url 'profile' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Profile
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5 class="text-primary">Event Name</h5>
+                        <p class="mb-0">{{ event.name }}</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5 class="text-primary">Description</h5>
+                        <p class="mb-0">{{ event.description }}</p>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5 class="text-primary">Amount</h5>
+                            <p class="mb-0">₹{{ event.amount }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="text-primary">Created At</h5>
+                            <p class="mb-0">{{ event.created_at|date:"F d, Y" }}</p>
+                        </div>
+                    </div>
+
+                    {% if event.type == 'sponsor_event' %}
+                        <div class="mb-4">
+                            <h5 class="text-primary">Expected Attendance</h5>
+                            <p class="mb-0">{{ event.expected_attendance }}</p>
+                        </div>
+                        <div class="mb-4">
+                            <h5 class="text-primary">Deliverables</h5>
+                            <p class="mb-0">{{ event.deliverables }}</p>
+                        </div>
+                        <div class="mb-4">
+                            <h5 class="text-primary">Keywords</h5>
+                            <p class="mb-0">{{ event.keywords }}</p>
+                        </div>
+                    {% else %}
+                        <div class="mb-4">
+                            <h5 class="text-primary">Contact Number</h5>
+                            <p class="mb-0">{{ event.contact_no }}</p>
+                        </div>
+                        <div class="mb-4">
+                            <h5 class="text-primary">Location</h5>
+                            <p class="mb-0">{{ event.location }}</p>
+                        </div>
+                        <div class="mb-4">
+                            <h5 class="text-primary">Basic Deliverables</h5>
+                            <p class="mb-0">{{ event.basic_deliverables }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'edit_event' event.id %}" class="btn btn-primary">
+                            <i class="fas fa-edit me-2"></i>Edit Event
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

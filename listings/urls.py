@@ -5,7 +5,8 @@ from .views import (HomeView, sponsor_list, client_list,
                    add_event, my_requests, my_history, profile, settings,
                    register_interest, create_college_event, create_sponsor_event,
                    create_admin, admin_list, delete_admin, admin_dashboard,
-                   cancel_request, request_details, accept_request)
+                   cancel_request, request_details, accept_request,
+                   chat_view, send_message, get_messages, event_details, edit_event)
 
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
@@ -28,8 +29,8 @@ urlpatterns = [
     
     # Sponsor dashboard URLs
     path('add-event/', add_event, name='add_event'),
-    path('my-requests/', my_requests, name='my_requests'),
-    path('my-history/', my_history, name='my_history'),
+    path('my_requests/', my_requests, name='my_requests'),
+    path('my_history/', my_history, name='my_history'),
     path('profile/', profile, name='profile'),
     path('settings/', settings, name='settings'),
     path('api/events/<str:event_id>/interest/', register_interest, name='register_interest'),
@@ -38,4 +39,9 @@ urlpatterns = [
     path('requests/<str:request_id>/', request_details, name='request-details'),
     path('create-college-event/', create_college_event, name='create-college-event'),
     path('create-sponsor-event/', create_sponsor_event, name='create-sponsor-event'),
+    path('chat/<str:request_id>/', chat_view, name='chat'),
+    path('api/chat/<str:request_id>/send/', send_message, name='send_message'),
+    path('api/chat/<str:request_id>/messages/', get_messages, name='get_messages'),
+    path('events/<str:event_id>/', event_details, name='event_details'),
+    path('events/<str:event_id>/edit/', edit_event, name='edit_event'),
 ]

@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from .models import SponsorListing, ClientListing, Sponsor, College, SponsorEvent, CollegeEvent, EventRequest, SponsorHistory, CollegeSponsorshipHistory, Admin
+from .models import SponsorListing, ClientListing, Sponsor, College, SponsorEvent, CollegeEvent, EventRequest, SponsorHistory, CollegeSponsorshipHistory, Admin, Chat
 from .forms import SponsorForm, ClientForm, LoginForm, SignupForm, CollegeEventForm, SponsorEventForm
 from django.contrib import messages
 from django.views.generic import TemplateView
@@ -10,6 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from bson import ObjectId
 import json
 from datetime import datetime
+from django.views.decorators.http import require_POST
 
 def sponsor_list(request):
     # Get data from both old and new models
@@ -61,30 +62,31 @@ def sponsor_list(request):
     })
 
 def client_list(request):
-    # Get data from both old and new models
-    old_clients = ClientListing.objects.filter(is_active=True)
-    new_colleges = College.objects.all()
+    # Get college events for sponsorship opportunities
     college_events = CollegeEvent.objects.all()
     
-    # Convert old clients to match new format
-    converted_colleges = []
-    for client in old_clients:
-        converted_colleges.append({
-            'name': client.event_name,
-            'email': client.contact_email,
-            'contact_no': 'N/A',
-            'state': 'N/A',
-            'avg_rating': 0.0,
-            'created_at': client.created_at,
-            'description': client.description
+    # Format events for the template
+    events = []
+    for event in college_events:
+        events.append({
+            'id': str(event.id),
+            'event_name': event.event_name,
+            'description': event.description,
+            'amount': event.amount,
+            'contact_no': event.contact_no,
+            'location': event.location,
+            'basic_deliverables': event.basic_deliverables,
+            'created_at': event.created_at
         })
     
-    # Combine both lists
-    all_colleges = list(new_colleges) + converted_colleges
+    # Determine what to show based on user type
+    user_type = request.session.get('user_type', '')
+    is_authenticated = 'user_id' in request.session
     
     return render(request, 'listings/client_list.html', {
-        'colleges': all_colleges,
-        'college_events': college_events
+        'events': events,
+        'user_type': user_type,
+        'is_authenticated': is_authenticated
     })
 
 def create_sponsor(request):
@@ -315,27 +317,35 @@ def my_requests(request):
     accepted_requests = []
     
     if user_type == 'sponsor':
-        # Get requests for the sponsor's events (created by sponsor)
-        sponsor_events = SponsorEvent.objects(sponsor=user_id)
-        event_ids = [str(event.id) for event in sponsor_events]
-        created_requests = EventRequest.objects(event_id__in=event_ids, event_type='sponsor_event')
-        
-        # Get requests made by the sponsor to college events
-        received_requests = EventRequest.objects(sponsor=user_id)
-        
-        # Get accepted requests for the sponsor's events
-        accepted_requests = EventRequest.objects(event_id__in=event_ids, event_type='sponsor_event', status='accepted')
+        try:
+            # Get requests for the sponsor's events (created by sponsor)
+            sponsor_events = SponsorEvent.objects(sponsor=user_id)
+            event_ids = [str(event.id) for event in sponsor_events]
+            created_requests = EventRequest.objects(event_id__in=event_ids, event_type='sponsor_event')
+            
+            # Get requests made by the sponsor to college events
+            received_requests = EventRequest.objects(sponsor=user_id)
+            
+            # Get accepted requests for the sponsor's events
+            accepted_requests = EventRequest.objects(event_id__in=event_ids, event_type='sponsor_event', status='accepted')
+        except Exception as e:
+            print(f"Error fetching sponsor requests: {str(e)}")
+            messages.error(request, 'Error fetching your requests. Please try again.')
     else:
-        # Get requests made by the college to sponsor events
-        created_requests = EventRequest.objects(college=user_id)
-        
-        # Get requests for the college's events (received by college)
-        college_events = CollegeEvent.objects(college=user_id)
-        event_ids = [str(event.id) for event in college_events]
-        received_requests = EventRequest.objects(event_id__in=event_ids, event_type='college_event')
-        
-        # Get accepted requests for the college's events
-        accepted_requests = EventRequest.objects(event_id__in=event_ids, event_type='college_event', status='accepted')
+        try:
+            # Get requests made by the college to sponsor events
+            created_requests = EventRequest.objects(college=user_id)
+            
+            # Get requests for the college's events (received by college)
+            college_events = CollegeEvent.objects(college=user_id)
+            event_ids = [str(event.id) for event in college_events]
+            received_requests = EventRequest.objects(event_id__in=event_ids, event_type='college_event')
+            
+            # Get accepted requests for the college's events
+            accepted_requests = EventRequest.objects(event_id__in=event_ids, event_type='college_event', status='accepted')
+        except Exception as e:
+            print(f"Error fetching college requests: {str(e)}")
+            messages.error(request, 'Error fetching your requests. Please try again.')
     
     def process_requests(requests_list):
         processed_requests = []
@@ -345,79 +355,60 @@ def my_requests(request):
                 if not req.event_id or len(req.event_id) != 24:
                     print(f"Skipping request {req.id} - Invalid event_id format: {req.event_id}")
                     continue
-                    
+                
+                # Get event details based on event type
+                event_name = "Event no longer available"
+                event_exists = True
+                
                 if req.event_type == 'sponsor_event':
                     try:
                         event = SponsorEvent.objects.get(id=req.event_id)
-                        event_data = {
-                            'name': event.sponsor_name,
-                            'description': event.description,
-                            'amount': event.amount,
-                            'expected_attendance': event.expected_attendance,
-                            'deliverables': event.deliverables,
-                            'keywords': event.keywords,
-                            'created_at': event.created_at
-                        }
+                        event_name = event.sponsor_name
                     except SponsorEvent.DoesNotExist:
                         print(f"SponsorEvent not found for id: {req.event_id} (Request ID: {req.id})")
-                        continue
+                        event_exists = False
                 else:
                     try:
                         event = CollegeEvent.objects.get(id=req.event_id)
-                        event_data = {
-                            'name': event.event_name,
-                            'description': event.description,
-                            'amount': event.amount,
-                            'contact_no': event.contact_no,
-                            'location': event.location,
-                            'basic_deliverables': event.basic_deliverables,
-                            'created_at': event.created_at
-                        }
+                        event_name = event.event_name
                     except CollegeEvent.DoesNotExist:
                         print(f"CollegeEvent not found for id: {req.event_id} (Request ID: {req.id})")
-                        continue
+                        event_exists = False
                 
-                # Add status color for the badge
-                status_color = {
-                    'pending': 'warning',
-                    'accepted': 'success',
-                    'rejected': 'danger'
-                }.get(req.status, 'secondary')
-                
-                # Get the other party's information
-                other_party = None
-                if user_type == 'sponsor':
-                    try:
-                        college = College.objects.get(id=req.college)
+                # Get college/sponsor details
+                try:
+                    if user_type == 'sponsor':
+                        college = College.objects.get(id=req.college.id) if req.college else None
                         other_party = {
-                            'name': college.name,
-                            'email': college.email,
-                            'contact_no': college.contact_no
+                            'id': str(college.id) if college else None,
+                            'name': college.name if college else 'Unknown College',
+                            'email': college.email if college else 'N/A'
                         }
-                    except College.DoesNotExist:
-                        print(f"College not found for id: {req.college} (Request ID: {req.id})")
-                        pass
-                else:
-                    try:
-                        sponsor = Sponsor.objects.get(id=req.sponsor)
+                    else:
+                        sponsor = Sponsor.objects.get(id=req.sponsor.id) if req.sponsor else None
                         other_party = {
-                            'name': sponsor.name,
-                            'email': sponsor.email,
-                            'contact_no': sponsor.contact_no
+                            'id': str(sponsor.id) if sponsor else None,
+                            'name': sponsor.name if sponsor else 'Unknown Sponsor',
+                            'email': sponsor.email if sponsor else 'N/A'
                         }
-                    except Sponsor.DoesNotExist:
-                        print(f"Sponsor not found for id: {req.sponsor} (Request ID: {req.id})")
-                        pass
+                except Exception as e:
+                    print(f"Error getting other party details: {str(e)}")
+                    other_party = {
+                        'id': None,
+                        'name': 'Unknown',
+                        'email': 'N/A'
+                    }
                 
                 processed_requests.append({
                     'id': str(req.id),
-                    'event': event_data,
-                    'status': req.status.capitalize(),
-                    'status_color': status_color,
-                    'amount': req.price,
+                    'event_id': req.event_id,
+                    'event_name': event_name,
+                    'event_type': req.event_type,
+                    'status': req.status,
+                    'price': req.price,
                     'created_at': req.created_at,
-                    'message': req.basic_deliverables,
-                    'other_party': other_party
+                    'other_party': other_party,
+                    'event_exists': event_exists
                 })
             except Exception as e:
                 print(f"Error processing request {req.id}: {str(e)}")
@@ -425,10 +416,15 @@ def my_requests(request):
         
         return processed_requests
     
+    # Process all request lists
+    processed_created = process_requests(created_requests)
+    processed_received = process_requests(received_requests)
+    processed_accepted = process_requests(accepted_requests)
+    
     return render(request, 'listings/my_requests.html', {
-        'created_requests': process_requests(created_requests),
-        'received_requests': process_requests(received_requests),
-        'accepted_requests': process_requests(accepted_requests),
+        'created_requests': processed_created,
+        'received_requests': processed_received,
+        'accepted_requests': processed_accepted,
         'user_type': user_type
     })
 
@@ -457,10 +453,15 @@ def profile(request):
     
     if user_type == 'sponsor':
         user = Sponsor.objects.get(id=user_id)
+        events = SponsorEvent.objects(sponsor=user_id)
     else:
         user = College.objects.get(id=user_id)
+        events = CollegeEvent.objects(college=user_id)
     
-    return render(request, 'listings/profile.html', {'user': user})
+    return render(request, 'listings/profile.html', {
+        'user': user,
+        'events': events
+    })
 
 def settings(request):
     if 'user_id' not in request.session:
@@ -487,21 +488,26 @@ def register_interest(request, event_id):
             if not user_id or not user_type:
                 return JsonResponse({'error': 'User not authenticated'}, status=401)
             
-            # Get the event
+            # Try to get the event from both sponsor and college events
             try:
                 event = SponsorEvent.objects.get(id=event_id)
+                event_type = 'sponsor_event'
             except SponsorEvent.DoesNotExist:
-                return JsonResponse({'error': 'Event not found'}, status=404)
+                try:
+                    event = CollegeEvent.objects.get(id=event_id)
+                    event_type = 'college_event'
+                except CollegeEvent.DoesNotExist:
+                    return JsonResponse({'error': 'Event not found'}, status=404)
             
             # Create a new event request
             event_request = EventRequest(
-                sponsor=event.sponsor,
+                sponsor=Sponsor.objects.get(id=user_id) if user_type == 'sponsor' else None,
                 college=College.objects.get(id=user_id) if user_type == 'college' else None,
-                event_id=str(event_id),  # Convert to string
-                event_type='sponsor_event',
+                event_id=str(event_id),
+                event_type=event_type,
                 status='pending',
                 price=event.amount,
-                basic_deliverables=event.deliverables,
+                basic_deliverables=event.deliverables if event_type == 'sponsor_event' else event.basic_deliverables,
                 created_at=datetime.now()
             )
             event_request.save()
@@ -724,10 +730,10 @@ def request_details(request, request_id):
         # Verify the user owns this request
         if user_type == 'sponsor' and str(event_request.sponsor.id) != user_id:
             messages.error(request, 'Unauthorized access')
-            return redirect('my-requests')
+            return redirect('my_requests')
         elif user_type == 'college' and str(event_request.college.id) != user_id:
             messages.error(request, 'Unauthorized access')
-            return redirect('my-requests')
+            return redirect('my_requests')
         
         # Get event data
         if event_request.event_type == 'sponsor_event':
@@ -777,67 +783,359 @@ def request_details(request, request_id):
         
     except EventRequest.DoesNotExist:
         messages.error(request, 'Request not found')
-        return redirect('my-requests')
+        return redirect('my_requests')
     except Exception as e:
         messages.error(request, f'Error: {str(e)}')
-        return redirect('my-requests')
+        return redirect('my_requests')
 
 @csrf_exempt
 def accept_request(request, request_id):
-    if request.method == 'POST':
-        try:
-            user_id = request.session.get('user_id')
-            user_type = request.session.get('user_type')
-            
-            if not user_id or not user_type:
-                return JsonResponse({'error': 'User not authenticated'}, status=401)
-            
-            if user_type != 'sponsor':
-                return JsonResponse({'error': 'Only sponsors can accept requests'}, status=403)
-            
-            # Get the request
-            try:
-                event_request = EventRequest.objects.get(id=request_id)
-                
-                # Verify the sponsor owns this request
-                if str(event_request.sponsor.id) != user_id:
-                    return JsonResponse({'error': 'Unauthorized'}, status=403)
-                
-                # Only allow accepting pending requests
-                if event_request.status != 'pending':
-                    return JsonResponse({'error': 'Can only accept pending requests'}, status=400)
-                
-                # Update the request status
-                event_request.status = 'accepted'
-                event_request.save()
-                
-                # Create history records
-                sponsor_history = SponsorHistory(
-                    sponsor=event_request.sponsor,
-                    college=event_request.college,
-                    event_id=event_request.event_id,
-                    event_type=event_request.event_type,
-                    amount=event_request.price,
-                    created_at=datetime.now()
-                )
-                sponsor_history.save()
-                
-                college_history = CollegeSponsorshipHistory(
-                    college=event_request.college,
-                    sponsor=event_request.sponsor,
-                    event_id=event_request.event_id,
-                    event_type=event_request.event_type,
-                    amount=event_request.price,
-                    created_at=datetime.now()
-                )
-                college_history.save()
-                
-                return JsonResponse({'message': 'Request accepted successfully'})
-                
-            except EventRequest.DoesNotExist:
-                return JsonResponse({'error': 'Request not found'}, status=404)
-            
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+    if 'user_id' not in request.session:
+        messages.error(request, 'Please login first')
+        return redirect('login')
     
-    return JsonResponse({'error': 'Invalid request method'}, status=400)
+    try:
+        # Validate request_id format
+        if not request_id or len(request_id) != 24:
+            messages.error(request, 'Invalid request ID')
+            return redirect('my_requests')
+            
+        event_request = EventRequest.objects.get(id=ObjectId(request_id))
+        user_id = request.session['user_id']
+        user_type = request.session['user_type']
+        
+        # Check if the user has permission to accept this request
+        if user_type == 'sponsor':
+            if not event_request.sponsor or str(event_request.sponsor.id) != user_id:
+                messages.error(request, 'You do not have permission to accept this request')
+                return redirect('my_requests')
+        else:
+            if not event_request.college or str(event_request.college.id) != user_id:
+                messages.error(request, 'You do not have permission to accept this request')
+                return redirect('my_requests')
+        
+        # Update request status
+        event_request.status = 'accepted'
+        event_request.save()
+        
+        # Create history records
+        try:
+            if user_type == 'sponsor':
+                SponsorHistory(
+                    sponsor=event_request.sponsor,
+                    college=event_request.college,
+                    event_id=event_request.event_id,
+                    event_type=event_request.event_type,
+                    amount=event_request.price,
+                    created_at=datetime.now()
+                ).save()
+            else:
+                CollegeSponsorshipHistory(
+                    college=event_request.college,
+                    sponsor=event_request.sponsor,
+                    event_id=event_request.event_id,
+                    event_type=event_request.event_type,
+                    amount=event_request.price,
+                    created_at=datetime.now()
+                ).save()
+        except Exception as e:
+            print(f"Error creating history record: {str(e)}")
+            # Continue even if history creation fails
+        
+        # Create initial chat message
+        try:
+            initial_message = f"Request accepted! Let's discuss the details."
+            chat = Chat(
+                request=event_request,
+                message=initial_message,
+                created_at=datetime.now()
+            )
+            
+            if user_type == 'sponsor':
+                chat.sender = event_request.sponsor
+                chat.receiver = event_request.college
+            else:
+                chat.sender = event_request.college
+                chat.receiver = event_request.sponsor
+                
+            chat.save()
+        except Exception as e:
+            print(f"Error creating chat message: {str(e)}")
+            # Continue even if chat creation fails
+        
+        messages.success(request, 'Request accepted successfully!')
+        return redirect('my_requests')
+        
+    except EventRequest.DoesNotExist:
+        messages.error(request, 'Request not found')
+        return redirect('my_requests')
+    except Exception as e:
+        print(f"Error accepting request: {str(e)}")
+        messages.error(request, 'An error occurred while accepting the request')
+        return redirect('my_requests')
+
+@csrf_exempt
+def chat_view(request, request_id):
+    if 'user_id' not in request.session:
+        messages.error(request, 'Please login first')
+        return redirect('login')
+    
+    try:
+        event_request = EventRequest.objects.get(id=ObjectId(request_id))
+        user_id = request.session['user_id']
+        user_type = request.session['user_type']
+        
+        # Get the other party's information
+        if user_type == 'sponsor':
+            other_party = College.objects.get(id=event_request.college.id)
+        else:
+            other_party = Sponsor.objects.get(id=event_request.sponsor.id)
+        
+        return render(request, 'listings/chat.html', {
+            'request_id': request_id,
+            'other_party': other_party,
+            'user_id': user_id,
+            'user_type': user_type
+        })
+    except (EventRequest.DoesNotExist, Sponsor.DoesNotExist, College.DoesNotExist):
+        messages.error(request, 'Invalid request')
+        return redirect('my_requests')
+
+@csrf_exempt
+@require_POST
+def send_message(request, request_id):
+    if 'user_id' not in request.session:
+        return JsonResponse({'error': 'Please login first'}, status=401)
+    
+    try:
+        data = json.loads(request.body)
+        message_text = data.get('message')
+        
+        if not message_text:
+            return JsonResponse({'error': 'Message cannot be empty'}, status=400)
+        
+        event_request = EventRequest.objects.get(id=ObjectId(request_id))
+        user_id = request.session['user_id']
+        user_type = request.session['user_type']
+        
+        # Create new chat message
+        chat = Chat(
+            request=event_request,
+            message=message_text,
+            created_at=datetime.now()
+        )
+        
+        if user_type == 'sponsor':
+            chat.sender = Sponsor.objects.get(id=user_id)
+            chat.receiver = event_request.college
+        else:
+            chat.sender = College.objects.get(id=user_id)
+            chat.receiver = event_request.sponsor
+        
+        chat.save()
+        
+        return JsonResponse({
+            'id': str(chat.id),
+            'message': chat.message,
+            'created_at': chat.created_at.isoformat(),
+            'sender': {
+                'id': str(chat.sender.id),
+                'name': chat.sender.name
+            }
+        })
+    except (EventRequest.DoesNotExist, Sponsor.DoesNotExist, College.DoesNotExist):
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def get_messages(request, request_id):
+    if 'user_id' not in request.session:
+        return JsonResponse({'error': 'Please login first'}, status=401)
+    
+    try:
+        event_request = EventRequest.objects.get(id=ObjectId(request_id))
+        messages = Chat.objects.filter(request=event_request).order_by('created_at')
+        
+        message_list = []
+        for msg in messages:
+            # Handle the case where sender might be an ObjectId or a Document
+            sender_id = None
+            sender_name = 'System'
+            
+            if msg.sender:
+                if isinstance(msg.sender, (Sponsor, College)):
+                    sender_id = str(msg.sender.id)
+                    sender_name = msg.sender.name
+                else:
+                    # If sender is an ObjectId, try to fetch the actual document
+                    try:
+                        # Try Sponsor first
+                        sender = Sponsor.objects.get(id=msg.sender)
+                        sender_id = str(sender.id)
+                        sender_name = sender.name
+                    except Sponsor.DoesNotExist:
+                        try:
+                            # Try College if Sponsor not found
+                            sender = College.objects.get(id=msg.sender)
+                            sender_id = str(sender.id)
+                            sender_name = sender.name
+                        except College.DoesNotExist:
+                            # If neither found, use default values
+                            sender_id = str(msg.sender)
+                            sender_name = 'Unknown'
+            
+            message_list.append({
+                'id': str(msg.id),
+                'message': msg.message,
+                'created_at': msg.created_at.isoformat(),
+                'sender': {
+                    'id': sender_id,
+                    'name': sender_name
+                }
+            })
+        
+        return JsonResponse(message_list, safe=False)
+    except (EventRequest.DoesNotExist, Sponsor.DoesNotExist, College.DoesNotExist):
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+    except Exception as e:
+        print(f"Error in get_messages: {str(e)}")  # Add logging
+        return JsonResponse({'error': 'An error occurred while fetching messages'}, status=500)
+
+def event_details(request, event_id):
+    if 'user_id' not in request.session:
+        messages.error(request, 'Please login first')
+        return redirect('login')
+    
+    try:
+        user_id = request.session['user_id']
+        user_type = request.session['user_type']
+        
+        # Try to get the event from both sponsor and college events
+        try:
+            event = SponsorEvent.objects.get(id=event_id)
+            event_type = 'sponsor_event'
+        except SponsorEvent.DoesNotExist:
+            event = CollegeEvent.objects.get(id=event_id)
+            event_type = 'college_event'
+        
+        # Verify the user owns this event
+        if (user_type == 'sponsor' and str(event.sponsor.id) != user_id) or \
+           (user_type == 'college' and str(event.college.id) != user_id):
+            messages.error(request, 'Unauthorized access')
+            return redirect('profile')
+        
+        # Format event data for template
+        event_data = {
+            'id': str(event.id),
+            'name': event.sponsor_name if event_type == 'sponsor_event' else event.event_name,
+            'description': event.description,
+            'amount': event.amount,
+            'created_at': event.created_at,
+            'type': event_type
+        }
+        
+        if event_type == 'sponsor_event':
+            event_data.update({
+                'expected_attendance': event.expected_attendance,
+                'deliverables': event.deliverables,
+                'keywords': event.keywords
+            })
+        else:
+            event_data.update({
+                'contact_no': event.contact_no,
+                'location': event.location,
+                'basic_deliverables': event.basic_deliverables
+            })
+        
+        return render(request, 'listings/event_details.html', {
+            'event': event_data,
+            'user_type': user_type
+        })
+        
+    except (SponsorEvent.DoesNotExist, CollegeEvent.DoesNotExist):
+        messages.error(request, 'Event not found')
+        return redirect('profile')
+    except Exception as e:
+        messages.error(request, f'Error: {str(e)}')
+        return redirect('profile')
+
+def edit_event(request, event_id):
+    if 'user_id' not in request.session:
+        messages.error(request, 'Please login first')
+        return redirect('login')
+    
+    try:
+        user_id = request.session['user_id']
+        user_type = request.session['user_type']
+        
+        # Try to get the event from both sponsor and college events
+        try:
+            event = SponsorEvent.objects.get(id=event_id)
+            event_type = 'sponsor_event'
+            form_class = SponsorEventForm
+        except SponsorEvent.DoesNotExist:
+            event = CollegeEvent.objects.get(id=event_id)
+            event_type = 'college_event'
+            form_class = CollegeEventForm
+        
+        # Verify the user owns this event
+        if (user_type == 'sponsor' and str(event.sponsor.id) != user_id) or \
+           (user_type == 'college' and str(event.college.id) != user_id):
+            messages.error(request, 'Unauthorized access')
+            return redirect('profile')
+        
+        if request.method == 'POST':
+            form = form_class(request.POST)
+            if form.is_valid():
+                if event_type == 'sponsor_event':
+                    event.sponsor_name = form.cleaned_data['sponsor_name']
+                    event.description = form.cleaned_data['description']
+                    event.amount = form.cleaned_data['amount']
+                    event.expected_attendance = form.cleaned_data['expected_attendance']
+                    event.deliverables = form.cleaned_data['deliverables']
+                    event.keywords = form.cleaned_data['keywords']
+                else:
+                    event.event_name = form.cleaned_data['event_name']
+                    event.description = form.cleaned_data['description']
+                    event.amount = form.cleaned_data['amount']
+                    event.contact_no = form.cleaned_data['contact_no']
+                    event.location = form.cleaned_data['location']
+                    event.basic_deliverables = form.cleaned_data['basic_deliverables']
+                
+                event.save()
+                messages.success(request, 'Event updated successfully!')
+                return redirect('event_details', event_id=event_id)
+        else:
+            # Initialize form with current event data
+            if event_type == 'sponsor_event':
+                initial_data = {
+                    'sponsor_name': event.sponsor_name,
+                    'description': event.description,
+                    'amount': event.amount,
+                    'expected_attendance': event.expected_attendance,
+                    'deliverables': event.deliverables,
+                    'keywords': event.keywords
+                }
+            else:
+                initial_data = {
+                    'event_name': event.event_name,
+                    'description': event.description,
+                    'amount': event.amount,
+                    'contact_no': event.contact_no,
+                    'location': event.location,
+                    'basic_deliverables': event.basic_deliverables
+                }
+            form = form_class(initial=initial_data)
+        
+        return render(request, f'listings/edit_{event_type}.html', {
+            'form': form,
+            'event': event,
+            'event_type': event_type
+        })
+        
+    except (SponsorEvent.DoesNotExist, CollegeEvent.DoesNotExist):
+        messages.error(request, 'Event not found')
+        return redirect('profile')
+    except Exception as e:
+        messages.error(request, f'Error: {str(e)}')
+        return redirect('profile')

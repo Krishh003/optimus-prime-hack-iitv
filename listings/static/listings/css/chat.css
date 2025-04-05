@@ -1,0 +1,228 @@
+.chat-container {
+    height: calc(100vh - 72px);
+    padding: 0;
+    background-color: #f8f9fa;
+    max-width: 95%;
+    margin: 0 auto;
+}
+
+.chat-sidebar {
+    background-color: white;
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    max-width: 25%;
+}
+
+.chat-main {
+    padding: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    max-width: 75%;
+}
+
+.chat-header {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background-color: #f8f9fa;
+}
+
+.chat-info {
+    padding: 1rem;
+    flex-grow: 1;
+}
+
+.avatar {
+    font-size: 3rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.chat-messages {
+    flex-grow: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background-color: #f8f9fa;
+}
+
+/* Modern Message Bubbles */
+.message {
+    display: flex;
+    margin-bottom: 1rem;
+    width: 100%;
+}
+
+.message-sent {
+    justify-content: flex-end;
+}
+
+.message-received {
+    justify-content: flex-start;
+}
+
+.message-content {
+    max-width: 70%;
+    padding: 12px 16px;
+    border-radius: 1.5rem;
+    position: relative;
+    transition: all 0.3s ease;
+    word-wrap: break-word;
+    line-height: 1.4;
+}
+
+.message-sent .message-content {
+    background-color: #007bff;
+    color: white;
+    border-radius: 18px 18px 4px 18px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-left: auto;
+}
+
+.message-received .message-content {
+    background-color: #e9ecef;
+    color: #212529;
+    border-radius: 18px 18px 18px 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-right: auto;
+}
+
+.message-text {
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+.message-meta {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    font-size: 0.75rem;
+    opacity: 0.8;
+    margin-top: 0.5rem;
+}
+
+.message-sent .message-meta {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.message-received .message-meta {
+    color: #6c757d;
+}
+
+.chat-input {
+    padding: 0.75rem 1rem;
+    background-color: white;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.message-form .input-group {
+    background-color: #f8f9fa;
+    border-radius: 1.5rem;
+    padding: 0.25rem;
+}
+
+.message-form .form-control {
+    border: none;
+    background: none;
+    padding-left: 1rem;
+}
+
+.message-form .form-control:focus {
+    box-shadow: none;
+}
+
+.message-form .btn {
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Dark mode support */
+.dark-mode .chat-container {
+    background-color: var(--secondary-dark);
+}
+
+.dark-mode .chat-sidebar,
+.dark-mode .chat-input {
+    background-color: var(--primary-dark);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .chat-header {
+    background-color: var(--secondary-dark);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .message-received .message-content {
+    background-color: var(--primary-dark);
+    color: var(--text-color);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .message-sent .message-content {
+    background-color: #0b5ed7;
+}
+
+.dark-mode .message-form .input-group {
+    background-color: var(--secondary-dark);
+}
+
+.dark-mode .message-form .form-control {
+    color: var(--text-color);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .chat-container {
+        max-width: 100%;
+    }
+    
+    .chat-sidebar {
+        max-width: 30%;
+    }
+    
+    .chat-main {
+        max-width: 70%;
+    }
+    
+    .message-content {
+        max-width: 85%;
+        padding: 10px 14px;
+    }
+    
+    .message-text {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .chat-sidebar {
+        max-width: 35%;
+    }
+    
+    .chat-main {
+        max-width: 65%;
+    }
+    
+    .message-content {
+        max-width: 90%;
+        padding: 8px 12px;
+    }
+    
+    .message-text {
+        font-size: 0.85rem;
+    }
+    
+    .message-meta {
+        font-size: 0.65rem;
+    }
+} 

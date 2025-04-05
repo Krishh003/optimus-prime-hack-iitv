@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'listings/css/styles.css' %}">
     {% csrf_token %}
+    {% block extra_css %}{% endblock %}
 </head>
 
 <body>
@@ -50,6 +51,19 @@
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'profile' %}">
+                                    <i class="fas fa-user me-2"></i>My Profile
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'settings' %}">
+                                    <i class="fas fa-cog me-2"></i>Settings
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
                             <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                         </ul>
                     </li>
@@ -59,23 +73,6 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link animate-on-scroll" href="{% url 'signup' %}">Sign Up</a>
-                    </li>
-                    {% endif %}
-                    {% if request.session.user_id %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'my_requests' %}">
-                            <i class="fas fa-list me-2"></i>My Requests
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'my_history' %}">
-                            <i class="fas fa-history me-2"></i>My History
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'add_event' %}">
-                            <i class="fas fa-plus me-2"></i>Add Event
-                        </a>
                     </li>
                     {% endif %}
                 </ul>

@@ -1,101 +1,146 @@
 {% extends 'listings/base.html' %} {% load static %} {% block content %}
 <div class="container py-5">
-    <div class="row">
-        <div class="col-md-4">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        {% if user.profile_picture %}
-                        <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="rounded-circle img-thumbnail" style="width: 150px; height: 150px; object-fit: cover;"> {% else %}
-                        <img src="{% static 'images/default-profile.png' %}" alt="Default Profile Picture" class="rounded-circle img-thumbnail" style="width: 150px; height: 150px; object-fit: cover;"> {% endif %}
-                    </div>
-                    <h4 class="mb-1">{{ user.get_full_name }}</h4>
-                    <p class="text-muted mb-3">{{ user.email }}</p>
-                    <button class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-camera me-2"></i>Change Photo
-                    </button>
-                </div>
-            </div>
-
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">Quick Stats</h5>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Total Events</span>
-                        <span class="badge bg-primary">{{ total_events }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Active Requests</span>
-                        <span class="badge bg-warning">{{ active_requests }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <span>Completed Events</span>
-                        <span class="badge bg-success">{{ completed_events }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+    <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow-sm">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h4 class="mb-0">My Profile</h4>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title mb-4">Profile Information</h5>
-
-                    {% if messages %} {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5 class="text-primary">Name</h5>
+                            <p class="mb-0">{{ user.name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="text-primary">Email</h5>
+                            <p class="mb-0">{{ user.email }}</p>
+                        </div>
                     </div>
-                    {% endfor %} {% endif %}
 
-                    <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">First Name</label>
-                                <input type="text" class="form-control" name="first_name" value="{{ user.first_name }}" required>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5 class="text-primary">Contact Number</h5>
+                            <p class="mb-0">{{ user.contact_no }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="text-primary">State</h5>
+                            <p class="mb-0">{{ user.state }}</p>
+                        </div>
+                    </div>
+
+                    {% if user.address %}
+                    <div class="mb-4">
+                        <h5 class="text-primary">Address</h5>
+                        <p class="mb-0">{{ user.address }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if user.avg_rating %}
+                    <div class="mb-4">
+                        <h5 class="text-primary">Average Rating</h5>
+                        <div class="d-flex align-items-center">
+                            <div class="rating">
+                                {% for i in "12345"|make_list %}
+                                    {% if forloop.counter <= user.avg_rating %}
+                                        <i class="fas fa-star text-warning"></i>
+                                    {% else %}
+                                        <i class="far fa-star text-warning"></i>
+                                    {% endif %}
+                                {% endfor %}
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Last Name</label>
-                                <input type="text" class="form-control" name="last_name" value="{{ user.last_name }}" required>
-                            </div>
+                            <span class="ms-2">{{ user.avg_rating|floatformat:1 }}/5.0</span>
                         </div>
+                    </div>
+                    {% endif %}
 
-                        <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" class="form-control" value="{{ user.email }}" readonly>
-                            <small class="text-muted">Email cannot be changed</small>
-                        </div>
+                    <div class="mb-4">
+                        <h5 class="text-primary">Account Created</h5>
+                        <p class="mb-0">{{ user.created_at|date:"F d, Y" }}</p>
+                    </div>
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'settings' %}" class="btn btn-primary">
+                            <i class="fas fa-cog me-2"></i>Edit Profile
+                        </a>
+                        <a href="{% url 'my_requests' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Phone Number</label>
-                            <input type="tel" class="form-control" name="phone" value="{{ user.phone }}" required>
+            <!-- Events Section -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h4 class="mb-0">My Events</h4>
+                </div>
+                <div class="card-body">
+                    {% if events %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Event Name</th>
+                                        <th>Amount</th>
+                                        <th>Created At</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for event in events %}
+                                    <tr>
+                                        <td>
+                                            {% if user_type == 'sponsor' %}
+                                                {{ event.sponsor_name }}
+                                            {% else %}
+                                                {{ event.event_name }}
+                                            {% endif %}
+                                        </td>
+                                        <td>₹{{ event.amount }}</td>
+                                        <td>{{ event.created_at|date:"F d, Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'event_details' event.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                            <a href="{% url 'edit_event' event.id %}" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Company Name</label>
-                            <input type="text" class="form-control" name="company" value="{{ user.company }}" required>
+                    {% else %}
+                        <div class="alert alert-info">
+                            No events found. 
+                            {% if user_type == 'sponsor' %}
+                                <a href="{% url 'create-sponsor-event' %}" class="alert-link">Create a new sponsor event</a>
+                            {% else %}
+                                <a href="{% url 'create-college-event' %}" class="alert-link">Create a new college event</a>
+                            {% endif %}
                         </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Company Website</label>
-                            <input type="url" class="form-control" name="website" value="{{ user.website }}">
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Bio</label>
-                            <textarea class="form-control" name="bio" rows="4">{{ user.bio }}</textarea>
-                        </div>
-
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-2"></i>Save Changes
-                            </button>
-                        </div>
-                    </form>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rating {
+        font-size: 1.2rem;
+    }
+    .table th {
+        font-weight: 600;
+    }
+    .badge {
+        font-size: 0.85rem;
+        padding: 0.35em 0.65em;
+    }
+</style>
 {% endblock %}

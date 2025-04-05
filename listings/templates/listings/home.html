@@ -1,80 +1,462 @@
-{% extends 'listings/base.html' %} {% load static %} {% block content %}
+{% extends 'listings/base.html' %}
+{% load static %}
+{% block content %}
+
+<!-- Add animation libraries -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<style>
+    :root {
+        --midnight-blue: #191970;
+        --dark-purple: #4B0082;
+        --violet: #8A2BE2;
+        --soft-pink: #FF69B4;
+        --light-pink: #FFB6C1;
+        --white: #FFFFFF;
+        --off-white: #F8F8FF;
+    }
+    
+    body {
+        background-color: var(--off-white);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    /* Animation Classes */
+    .animate-pop-in {
+        animation: popIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) both;
+    }
+    
+    .animate-float {
+        animation: float 6s ease-in-out infinite;
+    }
+    
+    @keyframes popIn {
+        0% {
+            opacity: 0;
+            transform: scale(0.5);
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+    
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-15px); }
+        100% { transform: translateY(0px); }
+    }
+    
+    /* Hero Section */
+    .hero-section {
+        background: linear-gradient(135deg, var(--midnight-blue) 0%, var(--dark-purple) 100%);
+        border-radius: 20px;
+        overflow: hidden;
+        padding: 60px 40px;
+        margin-bottom: 60px;
+        color: var(--white);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+    }
+    
+    /* Buttons */
+    .btn-primary {
+        background: linear-gradient(45deg, var(--violet), var(--soft-pink));
+        border: none;
+        padding: 12px 30px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(138, 43, 226, 0.6);
+    }
+    
+    .btn-outline-light {
+        border: 2px solid var(--white);
+        color: var(--white);
+        background: transparent;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-outline-light:hover {
+        background: var(--white);
+        color: var(--midnight-blue);
+    }
+    
+    /* Feature Cards */
+    .feature-card {
+        background: var(--white);
+        border: none;
+        border-radius: 15px;
+        padding: 30px;
+        height: 100%;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+    }
+    
+    .feature-icon {
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+        background: linear-gradient(45deg, var(--violet), var(--soft-pink));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+    
+    /* How It Works Section */
+    .how-it-works {
+        background: linear-gradient(135deg, var(--dark-purple) 0%, var(--midnight-blue) 100%);
+        color: var(--white);
+        border-radius: 20px;
+        padding: 60px 40px;
+    }
+    
+    .step-card {
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 30px;
+        height: 100%;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    .step-card:hover {
+        transform: translateY(-5px);
+        background: rgba(255,255,255,0.15);
+    }
+    
+    .step-number {
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(45deg, var(--soft-pink), var(--light-pink));
+        color: var(--white);
+        border-radius: 50%;
+        text-align: center;
+        line-height: 40px;
+        font-weight: bold;
+        margin-right: 15px;
+    }
+    
+    /* Section Titles */
+    .section-title {
+        position: relative;
+        display: inline-block;
+        margin-bottom: 40px;
+    }
+    
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80px;
+        height: 4px;
+        background: linear-gradient(45deg, var(--soft-pink), var(--violet));
+        border-radius: 2px;
+    }
+    
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+        .hero-section {
+            padding: 40px 20px;
+        }
+        
+        .how-it-works {
+            padding: 40px 20px;
+        }
+    }
+    
+    /* Horizontal Scrolling Text */
+    .marquee-container {
+        position: relative;
+        width: 100%;
+        height: 120px;
+        overflow: hidden;
+        margin: 60px 0;
+    }
+    
+    .marquee-content {
+        display: flex;
+        position: absolute;
+        width: max-content;
+        animation: marquee 30s linear infinite;
+    }
+    
+    .marquee-item {
+        display: flex;
+        align-items: center;
+        margin: 0 50px;
+        white-space: nowrap;
+    }
+    
+    .marquee-number {
+        font-size: 3.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--midnight-blue), var(--violet));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        margin-right: 15px;
+    }
+    
+    .marquee-text {
+        font-size: 1.5rem;
+        font-weight: 500;
+        background: linear-gradient(135deg, var(--dark-purple), var(--soft-pink));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+    
+    @keyframes marquee {
+        0% {
+            transform: translateX(0);
+        }
+        100% {
+            transform: translateX(-50%);
+        }
+    }
+    
+    /* Pause animation on hover */
+    .marquee-container:hover .marquee-content {
+        animation-play-state: paused;
+    }
+</style>
+
 <div class="container">
     <!-- Hero Section -->
-    <div class="row align-items-center py-5">
-        <div class="col-md-6">
-            <h1 class="display-4 fw-bold">Connect with the Right Partners</h1>
-            <p class="lead">Find the perfect sponsorship opportunities or get your event sponsored by leading brands.</p>
-            <div class="mt-4">
-                {% if not user.is_authenticated %}
-                <a href="{% url 'signup' %}" class="btn btn-primary btn-lg me-3">I'm a Sponsor</a>
-                <a href="{% url 'signup' %}" class="btn btn-outline-primary btn-lg">I'm a College</a> {% else %} {% if user.is_college %}
-                <a href="{% url 'create_college_event' %}" class="btn btn-primary btn-lg">Create New Event</a> {% else %}
-                <a href="{% url 'sponsor_dashboard' %}" class="btn btn-primary btn-lg">Browse Events</a> {% endif %} {% endif %}
+    <section class="hero-section animate_animated animate_fadeIn">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <h1 class="display-4 fw-bold mb-4 animate_animated animate_fadeInUp">Connect with the Right Partners</h1>
+                <p class="lead mb-4 animate_animated animatefadeInUp animate_delay-1s">Find perfect sponsorship opportunities or get your event sponsored by leading brands.</p>
+                <div class="mt-4">
+                    {% if not user.is_authenticated %}
+                    <a href="{% url 'signup' %}" class="btn btn-primary btn-lg me-3 mb-3 animate_animated animatefadeInUp animate_delay-2s">I'm a Sponsor</a>
+                    <a href="{% url 'signup' %}" class="btn btn-outline-light btn-lg mb-3 animate_animated animatefadeInUp animate_delay-2s">I'm a College</a> 
+                    {% else %} 
+                        {% if user.is_college %}
+                        <a href="{% url 'create_college_event' %}" class="btn btn-primary btn-lg animate_animated animatefadeInUp animate_delay-1s">Create New Event</a> 
+                        {% else %}
+                        <a href="{% url 'sponsor_dashboard' %}" class="btn btn-primary btn-lg animate_animated animatefadeInUp animate_delay-1s">Browse Events</a> 
+                        {% endif %} 
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <img src="{% static 'listings/images/heroimage.png' %}" alt="Sponsorship Platform" class="img-fluid rounded shadow animate-float" style="max-height: 400px;">
             </div>
         </div>
-        <div class="col-md-6">
-            <img src="{% static 'listings/images/hero-image.png' %}" alt="Sponsorship Platform" class="img-fluid rounded shadow">
-        </div>
-    </div>
+    </section>
 
     <!-- Features Section -->
-    <div class="row py-5">
-        <div class="col-12 text-center mb-4">
-            <h2>Why Choose Us?</h2>
-        </div>
-        <div class="col-md-4 mb-4">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <i class="fas fa-handshake fa-3x mb-3 text-primary"></i>
-                    <h5 class="card-title">Direct Connections</h5>
-                    <p class="card-text">Connect directly with colleges and sponsors without intermediaries.</p>
+    <section class="py-5 my-5">
+        <div class="row justify-content-center">
+            <div class="col-12 text-center mb-5">
+                <h2 class="section-title animate_animated animate_fadeIn">Why Choose Us?</h2>
+                <p class="animate_animated animatefadeIn animate_delay-1s">Discover the benefits of our sponsorship platform</p>
+            </div>
+            
+            <div class="col-md-4 mb-4 animate_animated animatefadeInUp animate_delay-1s">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-handshake"></i>
+                    </div>
+                    <h5 class="fw-bold">Direct Connections</h5>
+                    <p>Connect directly with colleges and sponsors without intermediaries.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4 animate_animated animatefadeInUp animate_delay-2s">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h5 class="fw-bold">Secure Platform</h5>
+                    <p>Your data and transactions are protected with industry-standard security.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4 animate_animated animatefadeInUp animate_delay-3s">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h5 class="fw-bold">Track Progress</h5>
+                    <p>Monitor your sponsorship requests and manage events efficiently.</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-4 mb-4">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <i class="fas fa-shield-alt fa-3x mb-3 text-primary"></i>
-                    <h5 class="card-title">Secure Platform</h5>
-                    <p class="card-text">Your data and transactions are protected with industry-standard security.</p>
-                </div>
+    </section>
+
+    <!-- Horizontal Scrolling Text -->
+    <div class="marquee-container">
+        <div class="marquee-content">
+            <div class="marquee-item">
+                <div class="marquee-number">500+</div>
+                <div class="marquee-text">Companies have partnered with us</div>
             </div>
-        </div>
-        <div class="col-md-4 mb-4">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <i class="fas fa-chart-line fa-3x mb-3 text-primary"></i>
-                    <h5 class="card-title">Track Progress</h5>
-                    <p class="card-text">Monitor your sponsorship requests and manage events efficiently.</p>
-                </div>
+            <div class="marquee-item">
+                <div class="marquee-number">1000+</div>
+                <div class="marquee-text">Successful sponsorships</div>
+            </div>
+            <div class="marquee-item">
+                <div class="marquee-number">200+</div>
+                <div class="marquee-text">College events sponsored</div>
+            </div>
+            <div class="marquee-item">
+                <div class="marquee-number">50+</div>
+                <div class="marquee-text">Cities across the country</div>
+            </div>
+            <!-- Duplicate items for seamless loop -->
+            <div class="marquee-item">
+                <div class="marquee-number">500+</div>
+                <div class="marquee-text">Companies have partnered with us</div>
+            </div>
+            <div class="marquee-item">
+                <div class="marquee-number">1000+</div>
+                <div class="marquee-text">Successful sponsorships</div>
+            </div>
+            <div class="marquee-item">
+                <div class="marquee-number">200+</div>
+                <div class="marquee-text">College events sponsored</div>
+            </div>
+            <div class="marquee-item">
+                <div class="marquee-number">50+</div>
+                <div class="marquee-text">Cities across the country</div>
             </div>
         </div>
     </div>
 
     <!-- How It Works Section -->
-    <div class="row py-5">
-        <div class="col-12 text-center mb-4">
-            <h2>How It Works</h2>
+    <section class="how-it-works py-5 my-5">
+        <div class="row py-4">
+            <div class="col-12 text-center mb-5">
+                <h2 class="section-title animate_animated animate_fadeIn">How It Works</h2>
+                <p class="animate_animated animatefadeIn animate_delay-1s">Simple steps to get started with our platform</p>
+            </div>
+            
+            <div class="col-lg-6 mb-4 animate_animated animate_fadeInLeft">
+                <div class="step-card">
+                    <h4 class="fw-bold mb-4">For Colleges</h4>
+                    <div class="d-flex align-items-start mb-3">
+                        <span class="step-number">1</span>
+                        <div>
+                            <h5 class="fw-bold mb-1">Register your college account</h5>
+                            <p class="mb-0">Quick and easy signup process</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-start mb-3">
+                        <span class="step-number">2</span>
+                        <div>
+                            <h5 class="fw-bold mb-1">Create and list your events</h5>
+                            <p class="mb-0">Showcase your events to potential sponsors</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-start mb-3">
+                        <span class="step-number">3</span>
+                        <div>
+                            <h5 class="fw-bold mb-1">Receive sponsorship requests</h5>
+                            <p class="mb-0">Get matched with interested sponsors</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-start">
+                        <span class="step-number">4</span>
+                        <div>
+                            <h5 class="fw-bold mb-1">Connect with sponsors</h5>
+                            <p class="mb-0">Collaborate and finalize sponsorship details</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 mb-4 animate_animated animate_fadeInRight">
+                <div class="step-card">
+                    <h4 class="fw-bold mb-4">For Sponsors</h4>
+                    <div class="d-flex align-items-start mb-3">
+                        <span class="step-number">1</span>
+                        <div>
+                            <h5 class="fw-bold mb-1">Create your sponsor account</h5>
+                            <p class="mb-0">Set up your profile in minutes</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-start mb-3">
+                        <span class="step-number">2</span>
+                        <div>
+                            <h5 class="fw-bold mb-1">Browse available events</h5>
+                            <p class="mb-0">Find events that match your brand</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-start mb-3">
+                        <span class="step-number">3</span>
+                        <div>
+                            <h5 class="fw-bold mb-1">Send sponsorship requests</h5>
+                            <p class="mb-0">Connect with event organizers</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-start">
+                        <span class="step-number">4</span>
+                        <div>
+                            <h5 class="fw-bold mb-1">Track your sponsorships</h5>
+                            <p class="mb-0">Manage all your sponsorships in one place</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="col-md-6 mb-4">
-            <h4>For Colleges</h4>
-            <ol class="list-group list-group-numbered">
-                <li class="list-group-item">Register your college account</li>
-                <li class="list-group-item">Create and list your events</li>
-                <li class="list-group-item">Receive sponsorship requests</li>
-                <li class="list-group-item">Connect with sponsors and collaborate</li>
-            </ol>
+    </section>
+    
+    <!-- CTA Section -->
+    <section class="py-5 my-5 text-center">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 animate_animated animate_zoomIn">
+                <h2 class="mb-4">Ready to Get Started?</h2>
+                <p class="lead mb-5">Join hundreds of colleges and sponsors already benefiting from our platform</p>
+                {% if not user.is_authenticated %}
+                <a href="{% url 'signup' %}" class="btn btn-primary btn-lg px-5 py-3 animate_animated animatepulse animateinfinite animate_slower">Sign Up Now</a>
+                {% else %}
+                <a href="{% if user.is_college %}{% url 'create_college_event' %}{% else %}{% url 'sponsor_dashboard' %}{% endif %}" 
+                   class="btn btn-primary btn-lg px-5 py-3 animate_animated animatepulse animateinfinite animate_slower">
+                    {% if user.is_college %}Create Your First Event{% else %}Browse Events{% endif %}
+                </a>
+                {% endif %}
+            </div>
         </div>
-        <div class="col-md-6 mb-4">
-            <h4>For Sponsors</h4>
-            <ol class="list-group list-group-numbered">
-                <li class="list-group-item">Create your sponsor account</li>
-                <li class="list-group-item">Browse available college events</li>
-                <li class="list-group-item">Send sponsorship requests</li>
-                <li class="list-group-item">Track your sponsorships and manage events</li>
-            </ol>
-        </div>
-    </div>
+    </section>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script>
+    // Add scroll animations
+    $(document).ready(function() {
+        // Animate elements when they come into view
+        $(window).scroll(function() {
+            $('.animate-on-scroll').each(function() {
+                var position = $(this).offset().top;
+                var scroll = $(window).scrollTop();
+                var windowHeight = $(window).height();
+                
+                if (scroll + windowHeight > position) {
+                    $(this).addClass('animate-pop-in');
+                }
+            });
+        });
+        
+        // Trigger scroll event on load
+        $(window).trigger('scroll');
+    });
+</script>
+
 {% endblock %}

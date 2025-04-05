@@ -156,3 +156,24 @@ class Admin(Document):
 
     def __str__(self):
         return self.username
+
+class Chat(Document):
+    request = fields.ReferenceField(EventRequest, required=True)
+    sender = fields.GenericReferenceField(required=True)
+    receiver = fields.GenericReferenceField(required=True)
+    message = fields.StringField(required=True)
+    created_at = fields.DateTimeField(default=datetime.now)
+    is_read = fields.BooleanField(default=False)
+    is_typing = fields.BooleanField(default=False)
+    last_typing_update = fields.DateTimeField(default=datetime.now)
+
+    meta = {
+        'collection': 'chats',
+        'indexes': [
+            'request',
+            'created_at'
+        ]
+    }
+
+    def __str__(self):
+        return f"{self.sender.name} -> {self.receiver.name}: {self.message[:50]}"

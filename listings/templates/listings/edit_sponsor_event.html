@@ -1,0 +1,55 @@
+{% extends 'listings/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">Edit Sponsor Event</h4>
+                        <a href="{% url 'event_details' event.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Event
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="sponsor_name" class="form-label">Event Name</label>
+                            <input type="text" class="form-control" id="sponsor_name" name="sponsor_name" value="{{ form.sponsor_name.value }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" required>{{ form.description.value }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">Amount (₹)</label>
+                            <input type="number" class="form-control" id="amount" name="amount" value="{{ form.amount.value }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="expected_attendance" class="form-label">Expected Attendance</label>
+                            <input type="number" class="form-control" id="expected_attendance" name="expected_attendance" value="{{ form.expected_attendance.value }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="deliverables" class="form-label">Deliverables</label>
+                            <textarea class="form-control" id="deliverables" name="deliverables" rows="3" required>{{ form.deliverables.value }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="keywords" class="form-label">Keywords (comma-separated)</label>
+                            <input type="text" class="form-control" id="keywords" name="keywords" value="{{ form.keywords.value }}" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
