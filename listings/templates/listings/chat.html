@@ -1,0 +1,164 @@
+{% extends 'listings/base.html' %} {% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Chats</h3>
+                </div>
+                <div class="list-group list-group-flush" id="chatList">
+                    <!-- Chat list will be populated here -->
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0" id="chatTitle">Select a chat</h3>
+                </div>
+                <div class="card-body">
+                    <div class="chat-messages" id="chatMessages" style="height: 400px; overflow-y: auto;">
+                        <!-- Messages will be populated here -->
+                    </div>
+                    <form id="messageForm" class="mt-3">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="messageInput" placeholder="Type your message...">
+                            <button class="btn btn-primary" type="submit">Send</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    let currentChat = null;
+    const chatMessages = document.getElementById('chatMessages');
+    const messageForm = document.getElementById('messageForm');
+    const messageInput = document.getElementById('messageInput');
+    const chatList = document.getElementById('chatList');
+    const chatTitle = document.getElementById('chatTitle');
+
+    // Function to load chats
+    async function loadChats() {
+        try {
+            const response = await fetch('/api/chat/');
+            const chats = await response.json();
+            chatList.innerHTML = '';
+            chats.forEach(chat => {
+                const div = document.createElement('div');
+                div.className = 'list-group-item list-group-item-action';
+                div.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-1">${chat.receiver.username}</h5>
+                    ${chat.is_read ? '' : '<span class="badge bg-primary rounded-pill">New</span>'}
+                </div>
+                <p class="mb-1">${chat.message.substring(0, 50)}...</p>
+            `;
+                div.onclick = () => loadChat(chat.id);
+                chatList.appendChild(div);
+            });
+        } catch (error) {
+            console.error('Error loading chats:', error);
+        }
+    }
+
+    // Function to load a specific chat
+    async function loadChat(chatId) {
+        currentChat = chatId;
+        try {
+            const response = await fetch(`/api/chat/${chatId}/`);
+            const chat = await response.json();
+            chatTitle.textContent = `Chat with ${chat.receiver.username}`;
+
+            // Load messages
+            const messagesResponse = await fetch(`/api/chat/${chatId}/messages/`);
+            const messages = await messagesResponse.json();
+
+            chatMessages.innerHTML = '';
+            messages.forEach(message => {
+                const div = document.createElement('div');
+                div.className = `message ${message.sender.id === currentUser.id ? 'sent' : 'received'}`;
+                div.innerHTML = `
+                <div class="message-content">
+                    <p>${message.message}</p>
+                    <small class="text-muted">${new Date(message.created_at).toLocaleString()}</small>
+                </div>
+            `;
+                chatMessages.appendChild(div);
+            });
+
+            // Mark as read
+            await fetch(`/api/chat/${chatId}/mark_read/`, {
+                method: 'POST'
+            });
+
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        } catch (error) {
+            console.error('Error loading chat:', error);
+        }
+    }
+
+    // Handle message submission
+    messageForm.onsubmit = async(e) => {
+        e.preventDefault();
+        if (!currentChat || !messageInput.value.trim()) return;
+
+        try {
+            const response = await fetch('/api/chat/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    receiver_id: currentChat,
+                    message: messageInput.value.trim()
+                })
+            });
+
+            if (response.ok) {
+                messageInput.value = '';
+                loadChat(currentChat);
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+        }
+    };
+
+    // Load chats on page load
+    loadChats();
+</script>
+
+<style>
+    .message {
+        margin: 10px;
+        padding: 10px;
+        border-radius: 10px;
+        max-width: 70%;
+    }
+    
+    .message.sent {
+        background-color: #007bff;
+        color: white;
+        margin-left: auto;
+    }
+    
+    .message.received {
+        background-color: #f8f9fa;
+        margin-right: auto;
+    }
+    
+    .message-content {
+        word-wrap: break-word;
+    }
+    
+    .message-content small {
+        display: block;
+        margin-top: 5px;
+        font-size: 0.8em;
+    }
+</style>
+{% endblock %} {% endblock %}

@@ -1,35 +1,67 @@
-{% extends 'listings/base.html' %}
-
-{% block content %}
+{% extends 'listings/base.html' %} {% block content %}
 <div class="container py-5">
-    <h1 class="text-center animate-on-scroll animate__animated animate__fadeInUp">Client Listings</h1>
+    <h1 class="text-center animate-on-scroll animate__animated animate__fadeInUp">College Listings</h1>
 
     <div class="row mt-4">
-        {% for client in clients %}
+        {% for college in colleges %}
         <div class="col-md-4 mb-4 animate-on-scroll">
             <div class="card h-100 shadow">
                 <div class="card-header bg-success text-white">
-                    <h3 class="mb-0">{{ client.event_name }}</h3>
+                    <h3 class="mb-0">{{ college.name }}</h3>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <div>
+                            <i class="fas fa-envelope fa-2x text-muted"></i>
+                            <h4 class="mt-2">{{ college.email }}</h4>
+                        </div>
+                        <div class="text-end">
+                            <i class="fas fa-phone fa-2x text-muted"></i>
+                            <div class="mt-2">
+                                <span class="btn btn-sm btn-outline-success">
+                                    {{ college.phone }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="card-text">{{ college.description }}</p>
+                </div>
+                <div class="card-footer text-muted small">
+                    Listed {{ college.created_at|timesince }} ago
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <h2 class="text-center mt-5 animate-on-scroll animate__animated animate__fadeInUp">College Events</h2>
+    <div class="row mt-4">
+        {% for event in college_events %}
+        <div class="col-md-4 mb-4 animate-on-scroll">
+            <div class="card h-100 shadow">
+                <div class="card-header bg-warning text-white">
+                    <h3 class="mb-0">{{ event.event_name }}</h3>
                 </div>
                 <div class="card-body">
                     <div class="d-flex justify-content-between mb-3">
                         <div>
                             <i class="fas fa-dollar-sign fa-2x text-muted"></i>
-                            <h4 class="mt-2">${{ client.required_funding }}</h4>
+                            <h4 class="mt-2">${{ event.amount }}</h4>
                         </div>
                         <div class="text-end">
-                            <i class="fas fa-envelope fa-2x text-muted"></i>
+                            <i class="fas fa-phone fa-2x text-muted"></i>
                             <div class="mt-2">
-                                <a href="mailto:{{ client.contact_email }}" class="btn btn-sm btn-outline-success">
-                                    Contact
-                                </a>
+                                <span class="btn btn-sm btn-outline-warning">
+                                    {{ event.contact_no }}
+                                </span>
                             </div>
                         </div>
                     </div>
-                    <p class="card-text">{{ client.description }}</p>
+                    <p class="card-text">{{ event.description }}</p>
+                    <p class="card-text"><small class="text-muted">Deliverables: {{ event.basic_deliverables }}</small></p>
                 </div>
                 <div class="card-footer text-muted small">
-                    Listed {{ client.created_at|timesince }} ago
+                    By {{ event.college.name }} | Listed {{ event.created_at|timesince }} ago
                 </div>
             </div>
         </div>

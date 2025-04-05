@@ -83,7 +83,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'sponsorship_db',
         'USER': 'root',
-        'PASSWORD': 'balaandhasini',
+        'PASSWORD': 'cidco@kharghar',
         'HOST': 'localhost',
         'PORT': '3306',
     }

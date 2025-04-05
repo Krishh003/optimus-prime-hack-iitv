@@ -62,17 +62,17 @@ def login(request):
                         refresh['user_id'] = user.sponsor_id
                         refresh['user_type'] = 'sponsor'
                         refresh['email'] = user.email
-                        
+
                         # Store user info in session
                         request.session['user_id'] = user.sponsor_id
                         request.session['user_type'] = 'sponsor'
                         request.session['user_name'] = user.name
                         request.session['user_email'] = user.email
-                        
+
                         # Store tokens in session
                         request.session['access_token'] = str(refresh.access_token)
                         request.session['refresh_token'] = str(refresh)
-                        
+
                         messages.success(request, 'Successfully logged in as sponsor!')
                         return redirect('sponsor-list')
                 except Sponsor.DoesNotExist:
@@ -86,17 +86,17 @@ def login(request):
                         refresh['user_id'] = user.college_id
                         refresh['user_type'] = 'college'
                         refresh['email'] = user.email
-                        
+
                         # Store user info in session
                         request.session['user_id'] = user.college_id
                         request.session['user_type'] = 'college'
                         request.session['user_name'] = user.name
                         request.session['user_email'] = user.email
-                        
+
                         # Store tokens in session
                         request.session['access_token'] = str(refresh.access_token)
                         request.session['refresh_token'] = str(refresh)
-                        
+
                         messages.success(request, 'Successfully logged in as college!')
                         return redirect('client-list')
                 except College.DoesNotExist:
@@ -144,10 +144,10 @@ def signup(request):
 def logout(request):
     # Clear the session
     request.session.flush()
-    
+
     # Add a success message
     messages.success(request, 'You have been successfully logged out.')
-    
+
     # Redirect to login page
     return redirect('login')
 
@@ -158,7 +158,7 @@ def get_current_user(request):
         user_type = request.session['user_type']
         user_name = request.session.get('user_name', '')
         user_email = request.session.get('user_email', '')
-        
+
         return JsonResponse({
             'is_authenticated': True,
             'user_id': user_id,
