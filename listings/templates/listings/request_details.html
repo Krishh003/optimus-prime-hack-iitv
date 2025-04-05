@@ -1,0 +1,147 @@
+{% extends 'listings/base.html' %} {% load static %} {% load humanize %} {% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">{{ request.event.name }}</h4>
+                        <span class="badge bg-{{ request.status_color }}">{{ request.status }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5 class="text-primary">Description</h5>
+                        <p class="mb-0">{{ request.event.description }}</p>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5 class="text-primary">Amount</h5>
+                            <h4 class="mb-0">₹{{ request.amount|intcomma }}</h4>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="text-primary">Request Date</h5>
+                            <p class="mb-0">{{ request.created_at|date:"F d, Y" }}</p>
+                        </div>
+                    </div>
+
+                    {% if request.event.expected_attendance %}
+                    <div class="mb-4">
+                        <h5 class="text-primary">Expected Attendance</h5>
+                        <p class="mb-0">{{ request.event.expected_attendance }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if request.event.deliverables %}
+                    <div class="mb-4">
+                        <h5 class="text-primary">Deliverables</h5>
+                        <p class="mb-0">{{ request.event.deliverables }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if request.event.keywords %}
+                    <div class="mb-4">
+                        <h5 class="text-primary">Keywords</h5>
+                        <p class="mb-0">{{ request.event.keywords }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if request.message %}
+                    <div class="mb-4">
+                        <h5 class="text-primary">Additional Notes</h5>
+                        <p class="mb-0">{{ request.message }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'my-requests' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Requests
+                        </a>
+                        <div>
+                            {% if request.status == 'Pending' %}
+                                {% if user_type == 'sponsor' %}
+                                <button class="btn btn-success me-2" onclick="acceptRequest('{{ request.id }}')">
+                                    <i class="fas fa-check me-2"></i>Accept Request
+                                </button>
+                                {% endif %}
+                                <button class="btn btn-outline-danger" onclick="cancelRequest('{{ request.id }}')">
+                                    <i class="fas fa-times me-2"></i>Cancel Request
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function acceptRequest(requestId) {
+    if (confirm('Are you sure you want to accept this request?')) {
+        fetch(`/api/requests/${requestId}/accept/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert('Request accepted successfully');
+                window.location.href = "{% url 'my-requests' %}";
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while accepting the request');
+        });
+    }
+}
+
+function cancelRequest(requestId) {
+    if (confirm('Are you sure you want to cancel this request?')) {
+        fetch(`/api/requests/${requestId}/cancel/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert('Request cancelled successfully');
+                window.location.href = "{% url 'my-requests' %}";
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while cancelling the request');
+        });
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %} 

@@ -107,7 +107,7 @@ class CollegeEvent(Document):
 class EventRequest(Document):
     sponsor = fields.ReferenceField(Sponsor)
     college = fields.ReferenceField(College)
-    event_id = fields.IntField()
+    event_id = fields.StringField()
     event_type = fields.StringField(max_length=20, choices=EVENT_TYPES)
     status = fields.StringField(max_length=20, choices=STATUS_CHOICES, default='pending')
     price = fields.DecimalField(precision=2)
@@ -144,3 +144,15 @@ class CollegeSponsorshipHistory(Document):
 
     def __str__(self):
         return f"{self.college.name} - {self.sponsor.name} - {self.event_id}"
+
+class Admin(Document):
+    username = fields.StringField(unique=True, required=True)
+    email = fields.EmailField(unique=True, required=True)
+    password = fields.StringField(required=True)
+    created_at = fields.DateTimeField(default=datetime.now)
+    created_by = fields.ReferenceField('self', required=False)
+
+    meta = {'collection': 'admins'}
+
+    def __str__(self):
+        return self.username

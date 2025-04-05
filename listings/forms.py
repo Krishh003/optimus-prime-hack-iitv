@@ -15,9 +15,16 @@ class ClientForm(forms.Form):
     contact_email = forms.EmailField()
 
 class LoginForm(forms.Form):
-    email = forms.EmailField()
-    password = forms.CharField(widget=forms.PasswordInput)
-    user_type = forms.ChoiceField(choices=[('sponsor', 'Sponsor'), ('college', 'College')])
+    email = forms.EmailField(required=True)
+    password = forms.CharField(widget=forms.PasswordInput, required=True)
+    user_type = forms.ChoiceField(
+        choices=[
+            ('sponsor', 'Sponsor'),
+            ('college', 'College'),
+            ('admin', 'Admin')
+        ],
+        required=True
+    )
 
 class SignupForm(forms.Form):
     name = forms.CharField(max_length=255)

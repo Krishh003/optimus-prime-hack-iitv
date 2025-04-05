@@ -1,70 +1,372 @@
 {% extends 'listings/base.html' %} {% load static %} {% load humanize %} {% block content %}
 <div class="container py-5">
-    <h2 class="text-center mb-4">My Requests</h2>
-
-    {% if messages %} {% for message in messages %}
-    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <div class="row mb-4">
+        <div class="col">
+            <h2>My Requests</h2>
+            <p class="text-muted">View and manage your event requests</p>
+        </div>
     </div>
-    {% endfor %} {% endif %}
 
+    {% if messages %}
+    <div class="row mb-4">
+        <div class="col">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Accepted Requests Section -->
+    <div class="row mb-5">
+        <div class="col">
+            <h3 class="mb-4">Accepted Requests</h3>
+            {% if accepted_requests %}
+                <div class="row">
+                    {% for request in accepted_requests %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-header bg-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">{{ request.event.name }}</h5>
+                                    <span class="badge bg-{{ request.status_color }}">{{ request.status }}</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <h6 class="text-primary">Description</h6>
+                                    <p class="mb-0">{{ request.event.description }}</p>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <h6 class="text-primary">Amount</h6>
+                                        <p class="mb-0">₹{{ request.amount|intcomma }}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="text-primary">Request Date</h6>
+                                        <p class="mb-0">{{ request.created_at|date:"F d, Y" }}</p>
+                                    </div>
+                                </div>
+
+                                {% if request.other_party %}
+                                <div class="mb-3">
+                                    <h6 class="text-primary">
+                                        {% if user_type == 'sponsor' %}College{% else %}Sponsor{% endif %} Details
+                                    </h6>
+                                    <p class="mb-1"><strong>Name:</strong> {{ request.other_party.name }}</p>
+                                    <p class="mb-1"><strong>Email:</strong> {{ request.other_party.email }}</p>
+                                    <p class="mb-0"><strong>Contact:</strong> {{ request.other_party.contact_no }}</p>
+                                </div>
+                                {% endif %}
+
+                                {% if request.event.expected_attendance %}
+                                <div class="mb-3">
+                                    <h6 class="text-primary">Expected Attendance</h6>
+                                    <p class="mb-0">{{ request.event.expected_attendance }}</p>
+                                </div>
+                                {% endif %}
+
+                                {% if request.event.deliverables %}
+                                <div class="mb-3">
+                                    <h6 class="text-primary">Deliverables</h6>
+                                    <p class="mb-0">{{ request.event.deliverables }}</p>
+                                </div>
+                                {% endif %}
+
+                                {% if request.event.keywords %}
+                                <div class="mb-3">
+                                    <h6 class="text-primary">Keywords</h6>
+                                    <p class="mb-0">{{ request.event.keywords }}</p>
+                                </div>
+                                {% endif %}
+
+                                {% if request.message %}
+                                <div class="mb-3">
+                                    <h6 class="text-primary">Additional Notes</h6>
+                                    <p class="mb-0">{{ request.message }}</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="card-footer bg-white">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'request-details' request.id %}" class="btn btn-outline-primary">
+                                        <i class="fas fa-eye me-2"></i>View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No accepted requests yet.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Created Requests Section -->
+    <div class="row mb-5">
+        <div class="col">
+            <h3 class="mb-4">My Created Events</h3>
+            {% if created_requests %}
+                <div class="row">
+                    {% for request in created_requests %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-header bg-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">{{ request.event.name }}</h5>
+                                    <span class="badge bg-{{ request.status_color }}">{{ request.status }}</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <h6 class="text-primary">Description</h6>
+                                    <p class="mb-0">{{ request.event.description }}</p>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <h6 class="text-primary">Amount</h6>
+                                        <p class="mb-0">₹{{ request.amount|intcomma }}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="text-primary">Request Date</h6>
+                                        <p class="mb-0">{{ request.created_at|date:"F d, Y" }}</p>
+                                    </div>
+                                </div>
+
+                                {% if request.other_party %}
+                                <div class="mb-3">
+                                    <h6 class="text-primary">
+                                        {% if user_type == 'sponsor' %}College{% else %}Sponsor{% endif %} Details
+                                    </h6>
+                                    <p class="mb-1"><strong>Name:</strong> {{ request.other_party.name }}</p>
+                                    <p class="mb-1"><strong>Email:</strong> {{ request.other_party.email }}</p>
+                                    <p class="mb-0"><strong>Contact:</strong> {{ request.other_party.contact_no }}</p>
+                                </div>
+                                {% endif %}
+
+                                {% if request.event.expected_attendance %}
+                                <div class="mb-3">
+                                    <h6 class="text-primary">Expected Attendance</h6>
+                                    <p class="mb-0">{{ request.event.expected_attendance }}</p>
+                                </div>
+                                {% endif %}
+
+                                {% if request.event.deliverables %}
+                                <div class="mb-3">
+                                    <h6 class="text-primary">Deliverables</h6>
+                                    <p class="mb-0">{{ request.event.deliverables }}</p>
+                                </div>
+                                {% endif %}
+
+                                {% if request.event.keywords %}
+                                <div class="mb-3">
+                                    <h6 class="text-primary">Keywords</h6>
+                                    <p class="mb-0">{{ request.event.keywords }}</p>
+                                </div>
+                                {% endif %}
+
+                                {% if request.message %}
+                                <div class="mb-3">
+                                    <h6 class="text-primary">Additional Notes</h6>
+                                    <p class="mb-0">{{ request.message }}</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="card-footer bg-white">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'request-details' request.id %}" class="btn btn-outline-primary">
+                                        <i class="fas fa-eye me-2"></i>View Details
+                                    </a>
+                                    {% if request.status == 'Pending' %}
+                                        <button class="btn btn-outline-danger" onclick="cancelRequest('{{ request.id }}')">
+                                            <i class="fas fa-times me-2"></i>Cancel Request
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    You haven't created any events yet.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Received Requests Section -->
     <div class="row">
-        {% if requests %} {% for request in requests %}
-        <div class="col-md-6 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-header bg-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">{{ request.event.college_name }}</h5>
-                        <span class="badge bg-{{ request.status_color }}">{{ request.status }}</span>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <h6 class="text-primary">Event</h6>
-                        <p class="mb-0">{{ request.event.name }}</p>
-                    </div>
+        <div class="col">
+            <h3 class="mb-4">Interested Users</h3>
+            {% if received_requests %}
+                <div class="row">
+                    {% for request in received_requests %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-header bg-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">{{ request.event.name }}</h5>
+                                    <span class="badge bg-{{ request.status_color }}">{{ request.status }}</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <h6 class="text-primary">Description</h6>
+                                    <p class="mb-0">{{ request.event.description }}</p>
+                                </div>
 
-                    <div class="mb-3">
-                        <h6 class="text-primary">Requested Amount</h6>
-                        <h4 class="mb-0">₹{{ request.amount|intcomma }}</h4>
-                    </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <h6 class="text-primary">Amount</h6>
+                                        <p class="mb-0">₹{{ request.amount|intcomma }}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="text-primary">Request Date</h6>
+                                        <p class="mb-0">{{ request.created_at|date:"F d, Y" }}</p>
+                                    </div>
+                                </div>
 
-                    <div class="mb-3">
-                        <h6 class="text-primary">Request Date</h6>
-                        <p class="mb-0">{{ request.created_at|date:"F d, Y" }}</p>
-                    </div>
+                                {% if request.other_party %}
+                                <div class="mb-3">
+                                    <h6 class="text-primary">
+                                        {% if user_type == 'sponsor' %}College{% else %}Sponsor{% endif %} Details
+                                    </h6>
+                                    <p class="mb-1"><strong>Name:</strong> {{ request.other_party.name }}</p>
+                                    <p class="mb-1"><strong>Email:</strong> {{ request.other_party.email }}</p>
+                                    <p class="mb-0"><strong>Contact:</strong> {{ request.other_party.contact_no }}</p>
+                                </div>
+                                {% endif %}
 
-                    {% if request.message %}
-                    <div class="mb-3">
-                        <h6 class="text-primary">Message</h6>
-                        <p class="mb-0">{{ request.message }}</p>
+                                {% if request.event.expected_attendance %}
+                                <div class="mb-3">
+                                    <h6 class="text-primary">Expected Attendance</h6>
+                                    <p class="mb-0">{{ request.event.expected_attendance }}</p>
+                                </div>
+                                {% endif %}
+
+                                {% if request.event.deliverables %}
+                                <div class="mb-3">
+                                    <h6 class="text-primary">Deliverables</h6>
+                                    <p class="mb-0">{{ request.event.deliverables }}</p>
+                                </div>
+                                {% endif %}
+
+                                {% if request.event.keywords %}
+                                <div class="mb-3">
+                                    <h6 class="text-primary">Keywords</h6>
+                                    <p class="mb-0">{{ request.event.keywords }}</p>
+                                </div>
+                                {% endif %}
+
+                                {% if request.message %}
+                                <div class="mb-3">
+                                    <h6 class="text-primary">Additional Notes</h6>
+                                    <p class="mb-0">{{ request.message }}</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="card-footer bg-white">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'request-details' request.id %}" class="btn btn-outline-primary">
+                                        <i class="fas fa-eye me-2"></i>View Details
+                                    </a>
+                                    {% if request.status == 'Pending' %}
+                                        <button class="btn btn-success" onclick="acceptRequest('{{ request.id }}')">
+                                            <i class="fas fa-check me-2"></i>Accept Request
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    {% endif %}
+                    {% endfor %}
                 </div>
-                <div class="card-footer bg-white border-top-0">
-                    <div class="d-flex justify-content-between">
-                        <a href="#" class="btn btn-outline-primary">
-                            <i class="fas fa-eye me-2"></i>View Details
-                        </a>
-                        {% if request.status == 'Pending' %}
-                        <button class="btn btn-outline-danger">
-                                        <i class="fas fa-times me-2"></i>Cancel
-                                    </button> {% endif %}
-                    </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No users have shown interest in your events yet.
                 </div>
-            </div>
+            {% endif %}
         </div>
-        {% endfor %} {% else %}
-        <div class="col-12 text-center">
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>You haven't made any requests yet.
-            </div>
-            <a href="{% url 'sponsor-list' %}" class="btn btn-primary mt-3">
-                <i class="fas fa-search me-2"></i>Browse Events
-            </a>
-        </div>
-        {% endif %}
     </div>
 </div>
+
+<script>
+function cancelRequest(requestId) {
+    if (confirm('Are you sure you want to cancel this request?')) {
+        fetch(`/api/requests/${requestId}/cancel/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert('Request cancelled successfully');
+                window.location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while cancelling the request');
+        });
+    }
+}
+
+function acceptRequest(requestId) {
+    if (confirm('Are you sure you want to accept this request?')) {
+        fetch(`/api/requests/${requestId}/accept/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert('Request accepted successfully');
+                window.location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while accepting the request');
+        });
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
 {% endblock %}

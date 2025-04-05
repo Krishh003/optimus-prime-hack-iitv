@@ -1,0 +1,57 @@
+{% extends 'listings/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2>Admin Accounts</h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{% url 'create-admin' %}" class="btn btn-primary">Create New Admin</a>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for admin in admins %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{{ admin.username }}</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush mb-3">
+                        <li class="list-group-item">
+                            <strong>Email:</strong> {{ admin.email }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Created At:</strong> {{ admin.created_at|date:"F j, Y" }}
+                        </li>
+                        {% if admin.created_by %}
+                        <li class="list-group-item">
+                            <strong>Created By:</strong> {{ admin.created_by.username }}
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        {% if admin.username != 'admin' %}
+                            <a href="{% url 'delete-admin' admin.id %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this admin account?')">
+                                Delete Admin
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No admin accounts found.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 
