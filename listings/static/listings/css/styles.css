@@ -68,8 +68,7 @@ body {
 }
 
 .theme-toggle {
-    margin-left: 1rem;
-    padding: 0.5rem 1rem;
+    padding: 0.375rem 0.75rem;
     border-radius: 20px;
     display: flex;
     align-items: center;
@@ -79,6 +78,7 @@ body {
     background-color: transparent;
     color: var(--accent-color);
     transition: all 0.3s ease;
+    font-size: 0.9rem;
 }
 
 .theme-toggle:hover {
@@ -88,7 +88,7 @@ body {
 }
 
 .theme-toggle i {
-    font-size: 1.1rem;
+    font-size: 1rem;
 }
 
 .dark-mode .theme-toggle {

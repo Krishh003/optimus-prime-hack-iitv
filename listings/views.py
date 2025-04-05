@@ -1,16 +1,24 @@
 from django.shortcuts import render, redirect
-from .models import SponsorListing, ClientListing
+from .models import Sponsor, College, SponsorEvent, CollegeEvent
 from .forms import SponsorForm, ClientForm
 from django.contrib import messages
 from django.views.generic import TemplateView
 
 def sponsor_list(request):
-    sponsors = SponsorListing.objects.filter(is_active=True)
-    return render(request, 'listings/sponsor_list.html', {'sponsors': sponsors})
+    sponsors = Sponsor.objects.all()
+    sponsor_events = SponsorEvent.objects.all()
+    return render(request, 'listings/sponsor_list.html', {
+        'sponsors': sponsors,
+        'sponsor_events': sponsor_events
+    })
 
 def client_list(request):
-    clients = ClientListing.objects.filter(is_active=True)
-    return render(request, 'listings/client_list.html', {'clients': clients})
+    colleges = College.objects.all()
+    college_events = CollegeEvent.objects.all()
+    return render(request, 'listings/client_list.html', {
+        'colleges': colleges,
+        'college_events': college_events
+    })
 
 def create_sponsor(request):
     if request.method == 'POST':
