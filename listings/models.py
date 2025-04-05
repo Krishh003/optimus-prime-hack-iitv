@@ -1,6 +1,40 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+class Sponsor(models.Model):
+    sponsor_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255)
+    email = models.EmailField(unique=True)
+    contact_no = models.CharField(max_length=15)
+    avg_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)
+    created_at = models.DateTimeField(auto_now_add=True)
+    password = models.CharField(max_length=255)
+    address = models.CharField(max_length=255)
+    state = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = 'sponsors'  # Specify the exact table name
+
+    def __str__(self):
+        return self.name
+
+class College(models.Model):
+    college_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255)
+    email = models.EmailField(unique=True)
+    contact_no = models.CharField(max_length=15)
+    avg_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)
+    state = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    password = models.CharField(max_length=255)
+    address = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'colleges'  # Specify the exact table name
+
+    def __str__(self):
+        return self.name
+
 class SponsorListing(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
     name = models.CharField(max_length=100)
