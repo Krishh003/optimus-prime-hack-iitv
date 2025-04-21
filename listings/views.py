@@ -184,7 +184,7 @@ def login(request):
                         request.session['refresh_token'] = str(refresh)
 
                         messages.success(request, 'Successfully logged in as sponsor!')
-                        return redirect('sponsor-list')  # Redirect to sponsor list after login
+                        return redirect('client-list')  # Redirect sponsor to client list
                     else:
                         messages.error(request, 'Invalid password')
                 except Sponsor.DoesNotExist:
@@ -211,7 +211,7 @@ def login(request):
                         request.session['refresh_token'] = str(refresh)
 
                         messages.success(request, 'Successfully logged in as college!')
-                        return redirect('client-list')  # Redirect to client list after login
+                        return redirect('sponsor-list')  # Redirect college to sponsor list
                     else:
                         messages.error(request, 'Invalid password')
                 except College.DoesNotExist:
@@ -305,9 +305,9 @@ class HomeView(TemplateView):
         if 'user_id' in request.session:
             user_type = request.session.get('user_type')
             if user_type == 'sponsor':
-                return redirect('sponsor-list')
+                return redirect('client-list')  # Redirect sponsor to client list
             elif user_type == 'college':
-                return redirect('client-list')
+                return redirect('sponsor-list')  # Redirect college to sponsor list
             elif user_type == 'admin':
                 return redirect('admin-dashboard')
         return super().dispatch(request, *args, **kwargs)
@@ -947,9 +947,25 @@ def chat_view(request, request_id):
         return redirect('login')
     
     try:
-        event_request = EventRequest.objects.get(id=ObjectId(request_id))
+        # First check if the request exists
+        try:
+            event_request = EventRequest.objects.get(id=ObjectId(request_id))
+        except EventRequest.DoesNotExist:
+            messages.error(request, 'Request not found')
+            return redirect('my_requests')
+            
         user_id = request.session['user_id']
         user_type = request.session['user_type']
+        
+        # Check if the event still exists
+        try:
+            if event_request.event_type == 'sponsor_event':
+                event = SponsorEvent.objects.get(id=event_request.event_id)
+            else:
+                event = CollegeEvent.objects.get(id=event_request.event_id)
+        except (SponsorEvent.DoesNotExist, CollegeEvent.DoesNotExist):
+            messages.error(request, 'The event associated with this request no longer exists')
+            return redirect('my_requests')
         
         # Get the other party's information
         if user_type == 'sponsor':
@@ -977,15 +993,17 @@ def chat_view(request, request_id):
             messages.error(request, 'Unauthorized access')
             return redirect('my_requests')
         
+        # Check if the request is still valid (not rejected)
+        if event_request.status == 'rejected':
+            messages.error(request, 'This request has been rejected')
+            return redirect('my_requests')
+        
         return render(request, 'listings/chat.html', {
             'request_id': request_id,
             'other_party': other_party,
             'user_id': user_id,
             'user_type': user_type
         })
-    except EventRequest.DoesNotExist:
-        messages.error(request, 'Request not found')
-        return redirect('my_requests')
     except Exception as e:
         print(f"Error in chat_view: {str(e)}")
         messages.error(request, 'An error occurred while accessing the chat')
